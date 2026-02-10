@@ -28,11 +28,7 @@ impl Widget for &App {
             self.counter
         );
 
-        let paragraph = Paragraph::new(text)
-            .block(block)
-            .fg(Color::Cyan)
-            .bg(Color::Black)
-            .centered();
+        let paragraph = Paragraph::new(text).block(block).fg(Color::Cyan).centered();
 
         paragraph.render(area, buf);
     }

@@ -1,11 +1,16 @@
-use crate::event::{AppEvent, Event, EventHandler};
+use std::rc::Rc;
+
+use crate::{
+    components::{self, Component, Tasks},
+    event::{AppEvent, Event, EventHandler},
+};
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
+    layout::{Constraint, Direction, Layout, Rect},
 };
 
 /// Application.
-#[derive(Debug)]
 pub struct App {
     /// Is the application running?
     pub running: bool,
@@ -13,6 +18,7 @@ pub struct App {
     pub counter: u8,
     /// Event handler.
     pub events: EventHandler,
+    pub components: Vec<Box<dyn Component>>,
 }
 
 impl Default for App {
@@ -21,6 +27,7 @@ impl Default for App {
             running: true,
             counter: 0,
             events: EventHandler::new(),
+            components: vec![Box::new(Tasks::new())],
         }
     }
 }
@@ -33,8 +40,23 @@ impl App {
 
     /// Run the application's main loop.
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+        self.render(terminal)?;
+
+        Ok(())
+    }
+
+    pub fn render(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
-            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
+            terminal.draw(|frame| {
+                // Render base layout
+                let chunks = self.get_layout().split(frame.area());
+                self.set_area(chunks.clone());
+
+                frame.render_widget(&self, chunks[1]);
+                for element in self.components.iter_mut() {
+                    element.draw(frame);
+                }
+            })?;
             self.handle_events()?;
         }
         Ok(())
@@ -73,6 +95,30 @@ impl App {
             _ => {}
         }
         Ok(())
+    }
+
+    fn set_area(&mut self, rects: Rc<[Rect]>) {
+        self.components
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, component)| {
+                component.set_area(rects[i]);
+            });
+    }
+
+    fn get_layout(&mut self) -> Layout {
+        let mut constraints = self
+            .components
+            .iter_mut()
+            .map(|component| component.get_layout())
+            .collect::<Vec<Constraint>>();
+
+        // Push preview.
+        constraints.push(Constraint::Fill(1));
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(constraints)
     }
 
     /// Handles the tick event of the terminal.
