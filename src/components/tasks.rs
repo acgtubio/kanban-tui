@@ -1,8 +1,8 @@
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Stylize},
-    widgets::{Block, BorderType, Paragraph},
+    widgets::{Block, BorderType, Paragraph, Widget},
 };
 
 use super::Component;
@@ -19,15 +19,8 @@ impl Tasks {
             area: None,
         }
     }
-}
 
-impl Component for Tasks {
-    fn draw(&mut self, frame: &mut Frame) {
-        let area = match self.area {
-            Some(a) => a,
-            None => frame.area(),
-        };
-
+    fn get_widget_ui(&self) -> impl Widget {
         let block = Block::bordered()
             .title("tasks")
             .title_alignment(Alignment::Left)
@@ -40,9 +33,26 @@ impl Component for Tasks {
                 Counter: "
         );
 
-        let widget = Paragraph::new(text).block(block).fg(Color::Cyan).centered();
+        Paragraph::new(text).block(block).fg(Color::Cyan).centered()
+    }
+}
 
-        frame.render_widget(widget, area);
+impl Component for Tasks {
+    fn draw(&mut self, frame: &mut Frame) {
+        let area = match self.area {
+            Some(a) => a,
+            None => frame.area(),
+        };
+
+        let layout = self.get_children_layout().split(area);
+
+        let widget = self.get_widget_ui();
+        let widget2 = self.get_widget_ui();
+        let widget3 = self.get_widget_ui();
+
+        frame.render_widget(widget, layout[0]);
+        frame.render_widget(widget2, layout[1]);
+        frame.render_widget(widget3, layout[2]);
     }
 
     fn get_layout(&mut self) -> ratatui::prelude::Constraint {
@@ -51,5 +61,15 @@ impl Component for Tasks {
 
     fn set_area(&mut self, area: Rect) {
         self.area = Some(area)
+    }
+
+    fn get_children_layout(&self) -> Layout {
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(30),
+                Constraint::Fill(1),
+                Constraint::Percentage(30),
+            ])
     }
 }

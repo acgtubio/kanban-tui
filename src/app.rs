@@ -33,13 +33,12 @@ impl Default for App {
 }
 
 impl App {
-    /// Constructs a new instance of [`App`].
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Run the application's main loop.
-    pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+    pub fn run(self, terminal: DefaultTerminal) -> color_eyre::Result<()> {
         self.render(terminal)?;
 
         Ok(())
@@ -50,6 +49,7 @@ impl App {
             terminal.draw(|frame| {
                 // Render base layout
                 let chunks = self.get_layout().split(frame.area());
+                // assign chunk as the area the child node will be drawing onto.
                 self.set_area(chunks.clone());
 
                 frame.render_widget(&self, chunks[1]);
@@ -97,6 +97,8 @@ impl App {
         Ok(())
     }
 
+    // set_area updates the children nodes such that the children will draw on the specific
+    // assigned area provided by the parent. Otherwise, the children will draw on the default area.
     fn set_area(&mut self, rects: Rc<[Rect]>) {
         self.components
             .iter_mut()
