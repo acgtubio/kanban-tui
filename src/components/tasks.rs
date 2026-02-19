@@ -6,9 +6,11 @@ use ratatui::{
 };
 
 use super::Component;
+use super::Task;
+use super::TaskStatus;
 
 pub struct Tasks {
-    tasks: Vec<String>,
+    tasks: Vec<Task>,
     area: Option<Rect>,
 }
 
@@ -20,7 +22,7 @@ impl Tasks {
         }
     }
 
-    fn get_widget_ui(&self) -> impl Widget {
+    fn get_widget_ui(&self, status: TaskStatus) -> impl Widget {
         let block = Block::bordered()
             .title("tasks")
             .title_alignment(Alignment::Left)
@@ -34,6 +36,13 @@ impl Tasks {
         );
 
         Paragraph::new(text).block(block).fg(Color::Cyan).centered()
+    }
+
+    fn filter_by_status(&self, status: TaskStatus) -> Vec<&Task> {
+        self.tasks
+            .iter()
+            .filter(|task| task.get_status() == status)
+            .collect()
     }
 }
 
