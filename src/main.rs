@@ -1,9 +1,9 @@
 use crate::app::App;
 
 pub mod app;
+pub mod app_state;
 pub mod components;
 pub mod event;
-pub mod ui;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

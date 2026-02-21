@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TaskStatus {
     Pending,
     InProgress,
@@ -28,7 +28,7 @@ impl Task {
         self.status = status;
     }
 
-    pub fn get_status(self) -> TaskStatus {
+    pub fn get_status(&self) -> TaskStatus {
         self.status
     }
 

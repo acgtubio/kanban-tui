@@ -1,33 +1,30 @@
-use std::rc::Rc;
-
 use crate::{
-    components::{self, Component, Tasks},
+    app_state::AppState,
+    components::{Component, Kanban, Preview},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout},
 };
 
-/// Application.
 pub struct App {
-    /// Is the application running?
     pub running: bool,
-    /// Counter.
-    pub counter: u8,
-    /// Event handler.
     pub events: EventHandler,
-    pub components: Vec<Box<dyn Component>>,
+    pub state: AppState,
+    pub kanban: Kanban,
+    pub preview: Preview,
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
             running: true,
-            counter: 0,
             events: EventHandler::new(),
-            components: vec![Box::new(Tasks::new())],
+            kanban: Kanban::new(),
+            preview: Preview::new(),
+            state: AppState::new(),
         }
     }
 }
@@ -47,15 +44,9 @@ impl App {
     pub fn render(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
             terminal.draw(|frame| {
-                // Render base layout
                 let chunks = self.get_layout().split(frame.area());
-                // assign chunk as the area the child node will be drawing onto.
-                self.set_area(chunks.clone());
 
-                frame.render_widget(&self, chunks[1]);
-                for element in self.components.iter_mut() {
-                    element.draw(frame);
-                }
+                self.kanban.draw(frame, chunks[0], &mut self.state);
             })?;
             self.handle_events()?;
         }
@@ -74,8 +65,8 @@ impl App {
                 _ => {}
             },
             Event::App(app_event) => match app_event {
-                AppEvent::Increment => self.increment_counter(),
-                AppEvent::Decrement => self.decrement_counter(),
+                // AppEvent::Increment => self.increment_counter(),
+                // AppEvent::Decrement => self.decrement_counter(),
                 AppEvent::Quit => self.quit(),
             },
         }
@@ -89,38 +80,18 @@ impl App {
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }
-            KeyCode::Right => self.events.send(AppEvent::Increment),
-            KeyCode::Left => self.events.send(AppEvent::Decrement),
+            // KeyCode::Right => self.events.send(AppEvent::Increment),
+            // KeyCode::Left => self.events.send(AppEvent::Decrement),
             // Other handlers you could add here.
             _ => {}
         }
         Ok(())
     }
 
-    // set_area updates the children nodes such that the children will draw on the specific
-    // assigned area provided by the parent. Otherwise, the children will draw on the default area.
-    fn set_area(&mut self, rects: Rc<[Rect]>) {
-        self.components
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, component)| {
-                component.set_area(rects[i]);
-            });
-    }
-
-    fn get_layout(&mut self) -> Layout {
-        let mut constraints = self
-            .components
-            .iter_mut()
-            .map(|component| component.get_layout())
-            .collect::<Vec<Constraint>>();
-
-        // Push preview.
-        constraints.push(Constraint::Fill(1));
-
+    fn get_layout(&self) -> Layout {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(constraints)
+            .constraints([Constraint::Percentage(70), Constraint::Fill(1)])
     }
 
     /// Handles the tick event of the terminal.
@@ -132,13 +103,5 @@ impl App {
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {
         self.running = false;
-    }
-
-    pub fn increment_counter(&mut self) {
-        self.counter = self.counter.saturating_add(1);
-    }
-
-    pub fn decrement_counter(&mut self) {
-        self.counter = self.counter.saturating_sub(1);
     }
 }

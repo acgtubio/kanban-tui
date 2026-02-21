@@ -1,11 +1,11 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Rect},
+    layout::{Layout, Rect},
 };
 
+use crate::app_state::AppState;
+
 pub trait Component {
-    fn draw(&mut self, frame: &mut Frame);
-    fn get_layout(&mut self) -> Constraint;
-    fn set_area(&mut self, area: Rect);
+    fn draw(&mut self, frame: &mut Frame, area: Rect, state: &mut AppState);
     fn get_children_layout(&self) -> Layout;
 }
