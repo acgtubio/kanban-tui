@@ -56,6 +56,7 @@ impl App {
         Ok(())
     }
 
+    // TODO: Remove
     fn add_test_tasks(&mut self) {
         if let Some(v) = self.state.tasks.get_mut(&TaskStatus::Pending) {
             v.push(Task::new(String::from("task1"), String::from("heyhey")));
@@ -85,18 +86,23 @@ impl App {
                 _ => {}
             },
             Event::App(app_event) => match app_event {
-                // AppEvent::Increment => self.increment_counter(),
-                // AppEvent::Decrement => self.decrement_counter(),
                 AppEvent::Quit => self.quit(),
+                AppEvent::SwitchWindow => self.cycle_focus(),
             },
         }
         Ok(())
+    }
+
+    // Moves focus across different panes.
+    fn cycle_focus(&mut self) {
+        self.state.cycle_focus();
     }
 
     /// Handles the key events and updates the state of [`App`].
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
         match key_event.code {
             KeyCode::Esc | KeyCode::Char('q') => self.events.send(AppEvent::Quit),
+            KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }
