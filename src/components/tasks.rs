@@ -3,47 +3,54 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style, Stylize},
-    widgets::{Block, BorderType, ListState, Paragraph, Widget},
+    widgets::{
+        Block, BorderType, HighlightSpacing, List, ListItem, ListState, Paragraph, StatefulWidget,
+        Widget,
+    },
 };
 
-use crate::app_state::{AppState, Panes};
+use crate::{
+    app_state::{AppState, Panes},
+    components::Task,
+};
 
 use super::Component;
 use super::TaskStatus;
 
 pub struct Kanban {
-    list_state: ListState,
+    pending_state: ListState,
+    in_progress_state: ListState,
+    completed_state: ListState,
 }
 
 impl Kanban {
     pub fn new() -> Self {
         Kanban {
-            list_state: ListState::default(),
+            pending_state: ListState::default(),
+            in_progress_state: ListState::default(),
+            completed_state: ListState::default(),
         }
     }
 
-    fn get_widget_ui(&self, status: TaskStatus, state: &AppState) -> impl Widget {
+    fn get_widget_ui<'a>(&self, tasks: &'a Vec<Task>) -> List<'a> {
         let block = Block::bordered()
             .title("tasks")
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 
-        let text = format!(
-            "This is a tui template.\n\
-                Press `Esc`, `Ctrl-C` or `q` to stop running.\n\
-                Press left and right to increment and decrement the counter respectively.\n\
-                Counter: "
-        );
+        let items = tasks
+            .iter()
+            .enumerate()
+            .map(|(_, item)| ListItem::from(item.name.as_str()))
+            .collect::<Vec<_>>();
 
-        Paragraph::new(text).block(block).fg(Color::Cyan).centered()
+        let list = List::new(items)
+            .block(block)
+            .highlight_symbol(">")
+            .highlight_spacing(HighlightSpacing::Always);
+
+        list
     }
-
-    // fn filter_by_status(&self, status: TaskStatus) -> Vec<&Task> {
-    //     self.tasks
-    //         .iter()
-    //         .filter(|task| task.get_status() == status)
-    //         .collect()
-    // }
 }
 
 impl Component for Kanban {
@@ -59,18 +66,22 @@ impl Component for Kanban {
             .border_type(BorderType::Rounded);
 
         let inner_area = block.inner(area);
-
         let layout = self.get_children_layout().split(inner_area);
 
-        let widget = self.get_widget_ui(TaskStatus::Pending, state);
-        let widget2 = self.get_widget_ui(TaskStatus::InProgress, state);
-        let widget3 = self.get_widget_ui(TaskStatus::Completed, state);
+        if let Some(pending_tasks) = &state.tasks.get(&TaskStatus::Pending) {
+            let widget = self.get_widget_ui(pending_tasks);
+            frame.render_stateful_widget(widget, layout[0], &mut self.pending_state);
+        }
 
-        frame.render_widget(block, area);
-        frame.render_widget(widget, layout[0]);
-        // frame.render_stateful_widget(widget, layout[0]);
-        frame.render_widget(widget2, layout[1]);
-        frame.render_widget(widget3, layout[2]);
+        if let Some(inprogress_tasks) = &state.tasks.get(&TaskStatus::InProgress) {
+            let widget = self.get_widget_ui(inprogress_tasks);
+            frame.render_stateful_widget(widget, layout[1], &mut self.in_progress_state);
+        }
+
+        if let Some(completed_tasks) = &state.tasks.get(&TaskStatus::Completed) {
+            let widget = self.get_widget_ui(completed_tasks);
+            frame.render_stateful_widget(widget, layout[2], &mut self.completed_state);
+        }
     }
 
     fn get_children_layout(&self) -> Layout {

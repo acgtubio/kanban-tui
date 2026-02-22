@@ -1,6 +1,6 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, Preview},
+    components::{Component, Kanban, Preview, Task, TaskStatus},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
@@ -42,6 +42,9 @@ impl App {
     }
 
     pub fn render(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+        // TODO: Remove. This is for testing.
+        self.add_test_tasks();
+
         while self.running {
             terminal.draw(|frame| {
                 let chunks = self.get_layout().split(frame.area());
@@ -51,6 +54,23 @@ impl App {
             self.handle_events()?;
         }
         Ok(())
+    }
+
+    fn add_test_tasks(&mut self) {
+        if let Some(v) = self.state.tasks.get_mut(&TaskStatus::Pending) {
+            v.push(Task::new(String::from("task1"), String::from("heyhey")));
+            v.push(Task::new(String::from("task2"), String::from("heyhey2")));
+            v.push(Task::new(String::from("task3"), String::from("heyhey3")));
+        } else {
+            self.state.tasks.insert(TaskStatus::Pending, vec![]);
+        }
+        if let Some(v) = self.state.tasks.get_mut(&TaskStatus::InProgress) {
+            v.push(Task::new(String::from("ip1"), String::from("heyhey")));
+            v.push(Task::new(String::from("ip2"), String::from("heyhey2")));
+            v.push(Task::new(String::from("ip3"), String::from("heyhey3")));
+        } else {
+            self.state.tasks.insert(TaskStatus::InProgress, vec![]);
+        }
     }
 
     pub fn handle_events(&mut self) -> color_eyre::Result<()> {

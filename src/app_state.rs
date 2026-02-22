@@ -8,15 +8,20 @@ pub enum Panes {
 }
 
 pub struct AppState {
-    pub tasks: HashMap<TaskStatus, Task>,
+    pub tasks: HashMap<TaskStatus, Vec<Task>>,
     pub focused: Panes,
 }
 
 impl AppState {
     pub fn new() -> Self {
-        AppState {
+        let mut app_state = AppState {
             tasks: HashMap::new(),
             focused: Panes::Kanban,
-        }
+        };
+        app_state.tasks.insert(TaskStatus::Pending, vec![]);
+        app_state.tasks.insert(TaskStatus::InProgress, vec![]);
+        app_state.tasks.insert(TaskStatus::Completed, vec![]);
+
+        app_state
     }
 }

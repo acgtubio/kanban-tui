@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskStatus {
     Pending,
     InProgress,
@@ -9,13 +9,13 @@ pub enum TaskStatus {
 
 pub struct Task {
     id: Uuid,
-    name: String,
+    pub name: String,
     description: String,
     status: TaskStatus,
 }
 
 impl Task {
-    fn new(name: String, description: String) -> Self {
+    pub fn new(name: String, description: String) -> Self {
         Task {
             id: Uuid::new_v4(),
             name: name,
