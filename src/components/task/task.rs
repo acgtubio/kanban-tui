@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskStatus {
     Pending,
     InProgress,

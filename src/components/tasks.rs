@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState},
 };
 
-use crate::app_state::{AppState, Panes};
+use crate::app_state::{AppState, Pane};
 
 use super::Component;
 use super::TaskStatus;
@@ -33,7 +33,7 @@ impl Kanban {
         };
 
         let mut color = Style::new().white();
-        if state.focused == Panes::Kanban(status) {
+        if state.active_pane == Pane::Kanban(status) {
             color = Style::new().yellow();
         };
 
@@ -64,7 +64,7 @@ impl Kanban {
 impl Component for Kanban {
     fn draw(&mut self, frame: &mut Frame, area: Rect, state: &mut AppState) {
         let mut block = Block::new().title_alignment(Alignment::Left);
-        if state.focused != Panes::Preview {
+        if state.active_pane != Pane::Preview {
             block = block.borders(Borders::ALL).border_type(BorderType::Rounded);
         }
 
