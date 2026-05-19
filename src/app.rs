@@ -1,6 +1,6 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, Preview, Task, TaskStatus},
+    components::{Component, Kanban, Preview, Task},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
@@ -58,20 +58,19 @@ impl App {
 
     // TODO: Remove
     fn add_test_tasks(&mut self) {
-        if let Some(v) = self.state.tasks.get_mut(&TaskStatus::Pending) {
-            v.push(Task::new(String::from("task1"), String::from("heyhey")));
-            v.push(Task::new(String::from("task2"), String::from("heyhey2")));
-            v.push(Task::new(String::from("task3"), String::from("heyhey3")));
-        } else {
-            self.state.tasks.insert(TaskStatus::Pending, vec![]);
-        }
-        if let Some(v) = self.state.tasks.get_mut(&TaskStatus::InProgress) {
-            v.push(Task::new(String::from("ip1"), String::from("heyhey")));
-            v.push(Task::new(String::from("ip2"), String::from("heyhey2")));
-            v.push(Task::new(String::from("ip3"), String::from("heyhey3")));
-        } else {
-            self.state.tasks.insert(TaskStatus::InProgress, vec![]);
-        }
+        self.state
+            .add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        self.state
+            .add_pending_task(Task::new(String::from("task2"), String::from("heyhey2")));
+        self.state
+            .add_pending_task(Task::new(String::from("task3"), String::from("heyhey3")));
+
+        self.state
+            .add_in_progress_task(Task::new(String::from("ip1"), String::from("heyhey")));
+        self.state
+            .add_in_progress_task(Task::new(String::from("ip2"), String::from("heyhey2")));
+        self.state
+            .add_in_progress_task(Task::new(String::from("ip3"), String::from("heyhey3")));
     }
 
     pub fn handle_events(&mut self) -> color_eyre::Result<()> {
@@ -88,6 +87,8 @@ impl App {
             Event::App(app_event) => match app_event {
                 AppEvent::Quit => self.quit(),
                 AppEvent::SwitchWindow => self.cycle_focus(),
+                AppEvent::FocusIn => self.state.focus_kanban(),
+                AppEvent::FocusOut => self.state.remove_kanban_focus(),
             },
         }
         Ok(())
@@ -95,14 +96,20 @@ impl App {
 
     // Moves focus across different panes.
     fn cycle_focus(&mut self) {
-        self.state.cycle_focus();
+        if !self.state.is_focused_kanban() {
+            self.state.cycle_focus();
+        } else {
+            self.state.cycle_kanban_focus();
+        }
     }
 
     /// Handles the key events and updates the state of [`App`].
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
         match key_event.code {
-            KeyCode::Esc | KeyCode::Char('q') => self.events.send(AppEvent::Quit),
+            KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
+            KeyCode::Enter => self.events.send(AppEvent::FocusIn),
+            KeyCode::Esc => self.events.send(AppEvent::FocusOut),
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }

@@ -1,10 +1,22 @@
 use uuid::Uuid;
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskStatus {
     Pending,
     InProgress,
     Completed,
+}
+
+impl TaskStatus {
+    pub fn to_string(&self) -> String {
+        let title = match self {
+            TaskStatus::Pending => "Pending",
+            TaskStatus::InProgress => "In Progress",
+            TaskStatus::Completed => "Completed",
+        };
+
+        title.into()
+    }
 }
 
 pub struct Task {
