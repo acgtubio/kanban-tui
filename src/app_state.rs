@@ -42,6 +42,10 @@ impl AppState {
         };
     }
 
+    pub fn is_focused_kanban(&self) -> bool {
+        self.kanban_focus != None
+    }
+
     pub fn cycle_kanban_focus(&mut self) {
         let Some(status) = self.get_status_by_pane() else {
             return;
@@ -113,21 +117,21 @@ impl AppState {
         }
     }
 
-    fn add_task(&mut self, task: Task, status: TaskStatus) {
+    pub fn add_task(&mut self, task: Task, status: TaskStatus) {
         if let Some(task_list) = self.tasks.get_mut(&status) {
             task_list.push(task);
         }
     }
 
-    fn add_pending_task(&mut self, task: Task) {
+    pub fn add_pending_task(&mut self, task: Task) {
         self.add_task(task, TaskStatus::Pending);
     }
 
-    fn add_in_progress_task(&mut self, task: Task) {
+    pub fn add_in_progress_task(&mut self, task: Task) {
         self.add_task(task, TaskStatus::InProgress);
     }
 
-    fn add_completed_task(&mut self, task: Task) {
+    pub fn add_completed_task(&mut self, task: Task) {
         self.add_task(task, TaskStatus::Completed);
     }
 }

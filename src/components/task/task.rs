@@ -7,6 +7,18 @@ pub enum TaskStatus {
     Completed,
 }
 
+impl TaskStatus {
+    pub fn to_string(&self) -> String {
+        let title = match self {
+            TaskStatus::Pending => "Pending",
+            TaskStatus::InProgress => "In Progress",
+            TaskStatus::Completed => "Completed",
+        };
+
+        title.into()
+    }
+}
+
 pub struct Task {
     id: Uuid,
     pub name: String,
