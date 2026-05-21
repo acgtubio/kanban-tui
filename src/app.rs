@@ -1,6 +1,6 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, Preview, Task},
+    components::{Component, Kanban, Preview, Task, TaskPriority},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
@@ -58,19 +58,37 @@ impl App {
 
     // TODO: Remove
     fn add_test_tasks(&mut self) {
-        self.state
-            .add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
-        self.state
-            .add_pending_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        self.state
-            .add_pending_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        self.state.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        self.state.add_pending_task(Task::new(
+            String::from("task2"),
+            String::from("heyhey2"),
+            TaskPriority::Normal,
+        ));
+        self.state.add_pending_task(Task::new(
+            String::from("task3"),
+            String::from("heyhey3"),
+            TaskPriority::High,
+        ));
 
-        self.state
-            .add_in_progress_task(Task::new(String::from("ip1"), String::from("heyhey")));
-        self.state
-            .add_in_progress_task(Task::new(String::from("ip2"), String::from("heyhey2")));
-        self.state
-            .add_in_progress_task(Task::new(String::from("ip3"), String::from("heyhey3")));
+        self.state.add_in_progress_task(Task::new(
+            String::from("ip1"),
+            String::from("heyhey"),
+            TaskPriority::Critical,
+        ));
+        self.state.add_in_progress_task(Task::new(
+            String::from("ip2"),
+            String::from("heyhey2"),
+            TaskPriority::Critical,
+        ));
+        self.state.add_in_progress_task(Task::new(
+            String::from("ip3"),
+            String::from("heyhey3"),
+            TaskPriority::Critical,
+        ));
     }
 
     pub fn handle_events(&mut self) -> color_eyre::Result<()> {
@@ -124,7 +142,7 @@ impl App {
     fn get_layout(&self) -> Layout {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(70), Constraint::Fill(1)])
+            .constraints([Constraint::Percentage(60), Constraint::Fill(1)])
     }
 
     /// Handles the tick event of the terminal.

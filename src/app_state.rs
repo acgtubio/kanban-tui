@@ -83,6 +83,10 @@ impl AppState {
     }
 
     pub fn focus_kanban(&mut self) {
+        if self.is_focused_kanban() {
+            return;
+        }
+
         let status = match self.active_pane {
             Pane::Kanban(task_status) => task_status,
             Pane::Preview => return,
@@ -138,12 +142,18 @@ impl AppState {
 
 #[cfg(test)]
 mod tests {
+    use crate::components::TaskPriority;
+
     use super::*;
 
     #[test]
     fn pending_task_size_should_1() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
         assert_eq!(Some(1), app.get_task_size_by_status(&TaskStatus::Pending));
     }
@@ -151,7 +161,11 @@ mod tests {
     #[test]
     fn should_not_be_focused_kanban() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
         assert_eq!(None, app.kanban_focus);
     }
@@ -159,7 +173,11 @@ mod tests {
     #[test]
     fn should_not_be_focused_kanban2() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.focus_kanban();
         app.remove_kanban_focus();
 
@@ -169,7 +187,11 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_pending() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.focus_kanban();
 
         assert_eq!(
@@ -184,9 +206,21 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_in_progres_idx1() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
-        app.add_in_progress_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        app.add_in_progress_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
         app.cycle_focus();
 
@@ -205,9 +239,21 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_in_progres_idx0() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
-        app.add_in_progress_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        app.add_in_progress_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
         app.cycle_focus();
 
@@ -227,14 +273,38 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_completed_idx2() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_in_progress_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        app.add_in_progress_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        app.add_in_progress_task(Task::new(
+            String::from("task2"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task3"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_completed_task(Task::new(String::from("task4"), String::from("heyhey2")));
-        app.add_completed_task(Task::new(String::from("task5"), String::from("heyhey3")));
-        app.add_completed_task(Task::new(String::from("task6"), String::from("heyhey3")));
+        app.add_completed_task(Task::new(
+            String::from("task4"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task5"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task6"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.cycle_focus();
         app.cycle_focus();
 
@@ -255,14 +325,38 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_completed_idx1() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_in_progress_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        app.add_in_progress_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        app.add_in_progress_task(Task::new(
+            String::from("task2"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task3"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_completed_task(Task::new(String::from("task4"), String::from("heyhey2")));
-        app.add_completed_task(Task::new(String::from("task5"), String::from("heyhey3")));
-        app.add_completed_task(Task::new(String::from("task6"), String::from("heyhey3")));
+        app.add_completed_task(Task::new(
+            String::from("task4"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task5"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task6"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.cycle_focus();
         app.cycle_focus();
 
@@ -282,14 +376,38 @@ mod tests {
     #[test]
     fn should_be_focused_on_kanban_completed_idx0() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_in_progress_task(Task::new(String::from("task2"), String::from("heyhey2")));
-        app.add_in_progress_task(Task::new(String::from("task3"), String::from("heyhey3")));
+        app.add_in_progress_task(Task::new(
+            String::from("task2"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_in_progress_task(Task::new(
+            String::from("task3"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
-        app.add_completed_task(Task::new(String::from("task4"), String::from("heyhey2")));
-        app.add_completed_task(Task::new(String::from("task5"), String::from("heyhey3")));
-        app.add_completed_task(Task::new(String::from("task6"), String::from("heyhey3")));
+        app.add_completed_task(Task::new(
+            String::from("task4"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task5"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
+        app.add_completed_task(Task::new(
+            String::from("task6"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.cycle_focus();
         app.cycle_focus();
 
@@ -311,7 +429,11 @@ mod tests {
     #[test]
     fn pane_should_be_pending() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
 
         assert_eq!(Some(TaskStatus::Pending), app.get_status_by_pane());
     }
@@ -319,7 +441,11 @@ mod tests {
     #[test]
     fn pane_should_be_in_progress() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.cycle_pane();
 
         assert_eq!(Some(TaskStatus::InProgress), app.get_status_by_pane());
@@ -328,7 +454,11 @@ mod tests {
     #[test]
     fn pane_should_be_completed() {
         let mut app = AppState::new();
-        app.add_pending_task(Task::new(String::from("task1"), String::from("heyhey")));
+        app.add_pending_task(Task::new(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskPriority::Low,
+        ));
         app.cycle_pane();
         app.cycle_pane();
 
