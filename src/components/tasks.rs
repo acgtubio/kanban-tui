@@ -55,7 +55,7 @@ impl Kanban {
 
         let block = Block::bordered()
             .border_style(color)
-            .title(status.to_string())
+            .title(status.to_readable_string())
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 

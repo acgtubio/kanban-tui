@@ -1,6 +1,7 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, Preview, Task, TaskPriority},
+    components::{Component, Kanban, Preview, Task, TaskConvertError, TaskPriority, TaskStatus},
+    db::{Db, SqliteDb},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
@@ -10,6 +11,7 @@ use ratatui::{
 };
 
 pub struct App {
+    pub db: SqliteDb,
     pub running: bool,
     pub events: EventHandler,
     pub state: AppState,
@@ -17,9 +19,10 @@ pub struct App {
     pub preview: Preview,
 }
 
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    pub fn new(db: SqliteDb) -> Self {
         Self {
+            db: db,
             running: true,
             events: EventHandler::new(),
             kanban: Kanban::new(),
@@ -27,11 +30,25 @@ impl Default for App {
             state: AppState::new(),
         }
     }
-}
 
-impl App {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn init_tasks(&mut self) {
+        let tasks_raw = self.db.get_tasks().expect("Unable to fetch kanban data.");
+
+        // TODO: Remove. This is for testing.
+        if tasks_raw.len() == 0 {
+            let _ = self.db.test_init();
+        }
+
+        let tasks = tasks_raw
+            .iter()
+            .map(|task| Task::from_task_model(task))
+            .collect::<Result<Vec<Task>, TaskConvertError>>()
+            .expect("Unable to convert to service models.");
+
+        tasks.iter().for_each(|task| {
+            let t = task.clone();
+            self.state.add_task(t, task.status);
+        });
     }
 
     /// Run the application's main loop.
@@ -42,9 +59,6 @@ impl App {
     }
 
     pub fn render(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
-        // TODO: Remove. This is for testing.
-        self.add_test_tasks();
-
         while self.running {
             terminal.draw(|frame| {
                 let chunks = self.get_layout().split(frame.area());
