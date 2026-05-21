@@ -4,10 +4,13 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Style, Stylize},
-    widgets::{Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState},
+    widgets::{Block, BorderType, Borders, ListState},
 };
 
-use crate::app_state::{AppState, Pane};
+use crate::{
+    app_state::{AppState, Pane},
+    components::task::TaskCard,
+};
 
 use super::Component;
 use super::TaskStatus;
@@ -35,27 +38,6 @@ impl Kanban {
         kanban
     }
 
-    fn get_items(state: &AppState, status: TaskStatus) -> Vec<String> {
-        let items = state
-            .tasks
-            .get(&status)
-            .map(|tasks| {
-                tasks
-                    .iter()
-                    .map(|item| item.name.clone())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-
-        items
-    }
-
-    fn build_list(items: Vec<String>) -> List<'static> {
-        let list = items.into_iter().map(ListItem::new).collect::<Vec<_>>();
-
-        List::new(list)
-    }
-
     fn render_column(
         &mut self,
         frame: &mut Frame,
@@ -63,10 +45,7 @@ impl Kanban {
         state: &AppState,
         status: TaskStatus,
     ) {
-        let items = Self::get_items(state, status);
-        let list = Self::build_list(items);
-
-        let list_state = self.states.get_mut(&status).expect("State should exist.");
+        let tasks = state.tasks.get(&status).expect("State should exist.");
 
         let color = if state.active_pane == Pane::Kanban(status) {
             Style::new().yellow()
@@ -80,12 +59,17 @@ impl Kanban {
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 
-        let list = list
-            .block(block)
-            .highlight_symbol(">")
-            .highlight_spacing(HighlightSpacing::Always);
+        let inner = block.inner(area);
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(1); tasks.len()])
+            .split(inner);
 
-        frame.render_stateful_widget(list, area, list_state);
+        for (i, task) in tasks.iter().enumerate() {
+            TaskCard::render_card(frame, layout[i], state, task, i);
+        }
+
+        frame.render_widget(block, area);
     }
 }
 
@@ -97,20 +81,29 @@ impl Component for Kanban {
         }
 
         let inner_area = block.inner(area);
-        let layout = self.get_children_layout().split(inner_area);
+        if let Some(focus) = &state.kanban_focus {
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Fill(1)])
+                .split(inner_area);
 
-        self.render_column(frame, layout[0], state, TaskStatus::Pending);
-        self.render_column(frame, layout[1], state, TaskStatus::InProgress);
-        self.render_column(frame, layout[2], state, TaskStatus::Completed);
+            self.render_column(frame, layout[0], state, focus.column);
+        } else {
+            let layout = self.get_children_layout().split(inner_area);
+
+            self.render_column(frame, layout[0], state, TaskStatus::Pending);
+            self.render_column(frame, layout[1], state, TaskStatus::InProgress);
+            self.render_column(frame, layout[2], state, TaskStatus::Completed);
+        }
     }
 
     fn get_children_layout(&self) -> Layout {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(30),
                 Constraint::Fill(1),
-                Constraint::Percentage(30),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
             ])
     }
 }
