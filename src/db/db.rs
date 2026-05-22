@@ -24,7 +24,7 @@ impl SqliteDb {
 
     pub fn init_db(&self) -> Result<usize, Error> {
         self.conn.execute(
-            "CREATE TABLE tasks IF NOT EXISTS (
+            "CREATE TABLE IF NOT EXISTS tasks (
                 uuid TEXT PRIMARY KEY,
                 name TEXT,
                 description TEXT,

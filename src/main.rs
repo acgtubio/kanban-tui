@@ -11,7 +11,10 @@ fn main() -> color_eyre::Result<()> {
     let terminal = ratatui::init();
 
     let db = SqliteDb::new().expect("Cannot connect to database.");
-    let app = App::new(db);
+    let _ = db.init_db();
+
+    let mut app = App::new(db);
+    app.init_tasks();
 
     let result = app.run(terminal);
 
