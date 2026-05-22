@@ -5,5 +5,5 @@ mod tasks;
 
 pub use components::Component;
 pub use preview::Preview;
-pub use task::{Task, TaskPriority, TaskStatus};
+pub use task::{Task, TaskConvertError, TaskPriority, TaskStatus};
 pub use tasks::Kanban;
