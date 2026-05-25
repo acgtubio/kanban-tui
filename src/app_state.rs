@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use crate::components::{Task, TaskStatus};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Pane {
     Preview,
+    MoveTaskModal,
     Kanban(TaskStatus),
 }
 
@@ -12,9 +13,10 @@ pub struct AppState {
     pub tasks: HashMap<TaskStatus, Vec<Task>>,
     pub active_pane: Pane,
     pub kanban_focus: Option<KanbanFocus>,
+    pub modal_focus: Option<TaskStatus>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct KanbanFocus {
     pub column: TaskStatus,
     pub task_idx: Option<usize>,
@@ -26,6 +28,7 @@ impl AppState {
             tasks: HashMap::new(),
             active_pane: Pane::Kanban(TaskStatus::Pending),
             kanban_focus: None,
+            modal_focus: None,
         };
 
         app_state.tasks.insert(TaskStatus::Pending, vec![]);
@@ -44,6 +47,10 @@ impl AppState {
 
     pub fn is_focused_kanban(&self) -> bool {
         self.kanban_focus != None
+    }
+
+    pub fn is_moving_task(&self) -> bool {
+        self.active_pane == Pane::MoveTaskModal
     }
 
     pub fn cycle_kanban_focus(&mut self) {
@@ -71,6 +78,16 @@ impl AppState {
         }
     }
 
+    pub fn cycle_task_status_focus(&mut self) {
+        if let Some(modal_focus) = self.modal_focus {
+            self.modal_focus = match modal_focus {
+                TaskStatus::Pending => Some(TaskStatus::InProgress),
+                TaskStatus::InProgress => Some(TaskStatus::Completed),
+                TaskStatus::Completed => Some(TaskStatus::Pending),
+            };
+        }
+    }
+
     pub fn cycle_pane(&mut self) {
         self.active_pane = match self.active_pane {
             Pane::Preview => Pane::Kanban(TaskStatus::Pending),
@@ -79,6 +96,7 @@ impl AppState {
                 TaskStatus::InProgress => Pane::Kanban(TaskStatus::Completed),
                 TaskStatus::Completed => Pane::Kanban(TaskStatus::Pending),
             },
+            Pane::MoveTaskModal => self.active_pane.clone(),
         }
     }
 
@@ -89,7 +107,7 @@ impl AppState {
 
         let status = match self.active_pane {
             Pane::Kanban(task_status) => task_status,
-            Pane::Preview => return,
+            _ => return,
         };
 
         let Some(task_length) = self.get_task_size_by_status(&status) else {
@@ -117,7 +135,7 @@ impl AppState {
     fn get_status_by_pane(&self) -> Option<TaskStatus> {
         match self.active_pane {
             Pane::Kanban(task_status) => Some(task_status),
-            Pane::Preview => None,
+            _ => None,
         }
     }
 
@@ -137,6 +155,22 @@ impl AppState {
 
     pub fn add_completed_task(&mut self, task: Task) {
         self.add_task(task, TaskStatus::Completed);
+    }
+
+    pub fn open_move_task_modal(&mut self) {
+        self.active_pane = Pane::MoveTaskModal;
+        self.modal_focus = Some(TaskStatus::Pending);
+    }
+
+    pub fn get_focused_task(&self) -> Option<Task> {
+        let focus = self.kanban_focus.clone()?;
+        let selected_index = focus.task_idx?;
+
+        let tasks = self.tasks.get(&focus.column)?;
+
+        let task = tasks.get(selected_index)?;
+
+        Some(task.clone())
     }
 }
 

@@ -99,7 +99,7 @@ impl Component for Kanban {
 
     fn get_children_layout(&self) -> Layout {
         Layout::default()
-            .direction(Direction::Vertical)
+            .direction(Direction::Horizontal)
             .constraints([
                 Constraint::Fill(1),
                 Constraint::Fill(1),
