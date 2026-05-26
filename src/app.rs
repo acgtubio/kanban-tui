@@ -121,6 +121,7 @@ impl App {
                 AppEvent::FocusOut => self.state.remove_kanban_focus(),
                 AppEvent::MoveTask => self.open_move_dialog(),
                 AppEvent::NewTask => todo!(),
+                AppEvent::ConfirmMove => self.handle_move(),
             },
         }
         Ok(())
@@ -153,7 +154,7 @@ impl App {
             KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
             KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
-            KeyCode::Enter => self.events.send(AppEvent::FocusIn),
+            KeyCode::Enter => self.handle_enter(),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
@@ -161,6 +162,24 @@ impl App {
             _ => {}
         }
         Ok(())
+    }
+
+    fn handle_enter(&mut self) {
+        if self.state.is_moving_task() {
+            self.events.send(AppEvent::ConfirmMove);
+            return;
+        }
+
+        self.events.send(AppEvent::FocusIn);
+    }
+
+    fn handle_move(&mut self) {
+        if let Some(target_status) = self.state.modal_focus
+            && let Some(task) = self.state.get_focused_task()
+        {
+            self.state.move_task(task, target_status);
+            self.state.remove_kanban_focus();
+        }
     }
 
     fn get_layout(&self) -> Layout {

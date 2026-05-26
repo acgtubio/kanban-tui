@@ -125,6 +125,14 @@ impl AppState {
     }
 
     pub fn remove_kanban_focus(&mut self) {
+        if self.is_moving_task() {
+            self.modal_focus = None;
+            // TODO: Find a way to retain the previous task status.
+
+            self.active_pane = Pane::Kanban(TaskStatus::Pending);
+            return;
+        }
+
         self.kanban_focus = None;
     }
 
@@ -160,6 +168,26 @@ impl AppState {
     pub fn open_move_task_modal(&mut self) {
         self.active_pane = Pane::MoveTaskModal;
         self.modal_focus = Some(TaskStatus::Pending);
+    }
+
+    // TODO: Add database movement.
+    pub fn move_task(&mut self, task: Task, target_status: TaskStatus) -> Option<Task> {
+        let target_task_list = self.tasks.get_mut(&target_status)?;
+
+        let new_task = Task {
+            id: task.id,
+            name: task.name,
+            description: task.description,
+            status: target_status,
+            priority: task.priority,
+        };
+
+        target_task_list.push(new_task.clone());
+
+        let source_task_list = self.tasks.get_mut(&task.status)?;
+        source_task_list.retain(|t| t.id != task.id);
+
+        Some(new_task)
     }
 
     pub fn get_focused_task(&self) -> Option<Task> {

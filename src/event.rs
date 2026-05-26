@@ -39,6 +39,7 @@ pub enum AppEvent {
     Quit,
     MoveTask,
     NewTask,
+    ConfirmMove,
 }
 
 /// Terminal event handler.

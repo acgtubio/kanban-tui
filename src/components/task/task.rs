@@ -148,6 +148,12 @@ pub struct Task {
     pub priority: TaskPriority,
 }
 
+impl PartialEq for Task {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 impl Task {
     pub fn new(name: String, description: String, prio: TaskPriority) -> Self {
         Task {
