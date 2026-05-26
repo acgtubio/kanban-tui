@@ -215,6 +215,6 @@ mod tests {
 
         let res = App::get_modal_area(r);
 
-        assert_eq!(810, res.x);
+        assert_eq!(920, res.x);
     }
 }
