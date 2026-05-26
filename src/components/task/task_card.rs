@@ -9,6 +9,7 @@ use ratatui::{
 use crate::{
     app_state::{AppState, KanbanFocus},
     components::{Task, TaskPriority},
+    theme::get_highlight_color,
 };
 
 pub struct TaskCard {}
@@ -35,7 +36,7 @@ impl TaskCard {
             && let Some(focus_idx) = kanban_focus.task_idx
             && focus_idx == idx
         {
-            Style::default().bg(Color::Rgb(40, 50, 65))
+            get_highlight_color()
         } else {
             Style::default()
         };

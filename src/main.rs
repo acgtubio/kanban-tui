@@ -5,6 +5,7 @@ pub mod app_state;
 pub mod components;
 pub mod db;
 pub mod event;
+pub mod theme;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

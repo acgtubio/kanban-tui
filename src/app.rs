@@ -3,6 +3,7 @@ use crate::{
     components::{Component, Kanban, MoveDialog, Preview, Task, TaskConvertError},
     db::{Db, SqliteDb},
     event::{AppEvent, Event, EventHandler},
+    theme::create_base_block,
 };
 use ratatui::{
     DefaultTerminal,
@@ -46,7 +47,7 @@ impl App {
             terminal.draw(|frame| {
                 let chunks = self.get_layout().split(frame.area());
 
-                let modal_block = Block::default().padding(Padding::uniform(5));
+                let modal_block = create_base_block().padding(Padding::uniform(5));
                 frame.render_widget(modal_block, frame.area());
 
                 // Kanban

@@ -1,20 +1,23 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Offset, Rect},
-    style::{Color, Style},
-    widgets::{Block, BorderType, Clear, Paragraph},
+    style::Style,
+    widgets::{Block, BorderType, Borders, Clear, Paragraph},
 };
 
 use crate::{
     app_state::AppState,
-    components::{Component, TaskStatus},
+    components::TaskStatus,
+    theme::{create_base_block, get_highlight_color},
 };
 
 pub struct MoveDialog {}
 
 impl MoveDialog {
     pub fn render_move_dialog(frame: &mut Frame, area: Rect, state: &AppState) {
-        let block = Block::bordered()
+        let block = create_base_block()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 
@@ -46,7 +49,7 @@ impl MoveDialog {
         let style = if let Some(status) = focus
             && status == task_status
         {
-            Style::default().bg(Color::Rgb(40, 50, 65))
+            get_highlight_color()
         } else {
             Style::default()
         };
