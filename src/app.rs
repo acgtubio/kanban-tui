@@ -12,7 +12,6 @@ use ratatui::{
 };
 
 pub struct App {
-    pub db: SqliteDb,
     pub running: bool,
     pub events: EventHandler,
     pub state: AppState,
@@ -23,33 +22,16 @@ pub struct App {
 impl App {
     pub fn new(db: SqliteDb) -> Self {
         Self {
-            db: db,
             running: true,
             events: EventHandler::new(),
             kanban: Kanban::new(),
             preview: Preview::new(),
-            state: AppState::new(),
+            state: AppState::new(db),
         }
     }
 
     pub fn init_tasks(&mut self) {
-        let tasks_raw = self.db.get_tasks().expect("Unable to fetch kanban data.");
-
-        // TODO: Remove. This is for testing.
-        if tasks_raw.len() == 0 {
-            let _ = self.db.test_init();
-        }
-
-        let tasks = tasks_raw
-            .iter()
-            .map(|task| Task::from_task_model(task))
-            .collect::<Result<Vec<Task>, TaskConvertError>>()
-            .expect("Unable to convert to service models.");
-
-        tasks.iter().for_each(|task| {
-            let t = task.clone();
-            self.state.add_task(t, task.status);
-        });
+        self.state.init_tasks();
     }
 
     /// Run the application's main loop.

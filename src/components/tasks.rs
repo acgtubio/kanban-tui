@@ -10,6 +10,7 @@ use ratatui::{
 use crate::{
     app_state::{AppState, Pane},
     components::task::TaskCard,
+    db::SqliteDb,
 };
 
 use super::Component;
