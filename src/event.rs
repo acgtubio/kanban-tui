@@ -37,6 +37,9 @@ pub enum AppEvent {
     FocusIn,
     FocusOut,
     Quit,
+    MoveTask,
+    NewTask,
+    ConfirmMove,
 }
 
 /// Terminal event handler.

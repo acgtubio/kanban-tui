@@ -27,6 +27,12 @@ impl FromSql for TaskStatus {
 }
 
 impl TaskStatus {
+    pub const ALL: [TaskStatus; 3] = [
+        TaskStatus::Pending,
+        TaskStatus::InProgress,
+        TaskStatus::Completed,
+    ];
+
     fn from_string(s: &str) -> Result<TaskStatus, ()> {
         match s {
             "PENDING" => Ok(TaskStatus::Pending),
@@ -140,6 +146,12 @@ pub struct Task {
     pub description: String,
     pub status: TaskStatus,
     pub priority: TaskPriority,
+}
+
+impl PartialEq for Task {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
 }
 
 impl Task {

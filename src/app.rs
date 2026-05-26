@@ -1,13 +1,14 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, Preview, Task, TaskConvertError, TaskPriority, TaskStatus},
+    components::{Component, Kanban, MoveDialog, Preview, Task, TaskConvertError},
     db::{Db, SqliteDb},
     event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{Block, Padding},
 };
 
 pub struct App {
@@ -63,46 +64,43 @@ impl App {
             terminal.draw(|frame| {
                 let chunks = self.get_layout().split(frame.area());
 
+                let modal_block = Block::default().padding(Padding::uniform(5));
+                frame.render_widget(modal_block, frame.area());
+
+                // Kanban
                 self.kanban.draw(frame, chunks[0], &mut self.state);
+
+                // Move task modal
+                if self.state.is_moving_task() {
+                    let area = frame.area();
+                    let modal_area = App::get_modal_area(area);
+
+                    MoveDialog::render_move_dialog(frame, modal_area, &mut self.state);
+                }
             })?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    // TODO: Remove
-    fn add_test_tasks(&mut self) {
-        self.state.add_pending_task(Task::new(
-            String::from("task1"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        self.state.add_pending_task(Task::new(
-            String::from("task2"),
-            String::from("heyhey2"),
-            TaskPriority::Normal,
-        ));
-        self.state.add_pending_task(Task::new(
-            String::from("task3"),
-            String::from("heyhey3"),
-            TaskPriority::High,
-        ));
+    fn get_modal_area(area: Rect) -> Rect {
+        let width = 80;
+        let height = 10;
 
-        self.state.add_in_progress_task(Task::new(
-            String::from("ip1"),
-            String::from("heyhey"),
-            TaskPriority::Critical,
-        ));
-        self.state.add_in_progress_task(Task::new(
-            String::from("ip2"),
-            String::from("heyhey2"),
-            TaskPriority::Critical,
-        ));
-        self.state.add_in_progress_task(Task::new(
-            String::from("ip3"),
-            String::from("heyhey3"),
-            TaskPriority::Critical,
-        ));
+        let mid_x = (area.x + area.width) / 2;
+        let mid_y = (area.y + area.height) / 2;
+
+        let start_x = mid_x - (width / 2);
+        let start_y = mid_y - (height / 2);
+
+        let modal_area = Rect {
+            x: start_x,
+            y: start_y,
+            height: height,
+            width: width,
+        };
+
+        modal_area
     }
 
     pub fn handle_events(&mut self) -> color_eyre::Result<()> {
@@ -121,6 +119,9 @@ impl App {
                 AppEvent::SwitchWindow => self.cycle_focus(),
                 AppEvent::FocusIn => self.state.focus_kanban(),
                 AppEvent::FocusOut => self.state.remove_kanban_focus(),
+                AppEvent::MoveTask => self.open_move_dialog(),
+                AppEvent::NewTask => todo!(),
+                AppEvent::ConfirmMove => self.handle_move(),
             },
         }
         Ok(())
@@ -128,6 +129,9 @@ impl App {
 
     // Moves focus across different panes.
     fn cycle_focus(&mut self) {
+        if self.state.is_moving_task() {
+            self.state.cycle_task_status_focus();
+        }
         if !self.state.is_focused_kanban() {
             self.state.cycle_focus();
         } else {
@@ -135,22 +139,47 @@ impl App {
         }
     }
 
+    fn open_move_dialog(&mut self) {
+        if !self.state.is_focused_kanban() {
+            return;
+        }
+        self.state.open_move_task_modal();
+    }
+
+    pub fn handle_focused_column_event() {}
+
     /// Handles the key events and updates the state of [`App`].
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
         match key_event.code {
             KeyCode::Char('q') => self.events.send(AppEvent::Quit),
+            KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
             KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
-            KeyCode::Enter => self.events.send(AppEvent::FocusIn),
+            KeyCode::Enter => self.handle_enter(),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
             }
-            // KeyCode::Right => self.events.send(AppEvent::Increment),
-            // KeyCode::Left => self.events.send(AppEvent::Decrement),
-            // Other handlers you could add here.
             _ => {}
         }
         Ok(())
+    }
+
+    fn handle_enter(&mut self) {
+        if self.state.is_moving_task() {
+            self.events.send(AppEvent::ConfirmMove);
+            return;
+        }
+
+        self.events.send(AppEvent::FocusIn);
+    }
+
+    fn handle_move(&mut self) {
+        if let Some(target_status) = self.state.modal_focus
+            && let Some(task) = self.state.get_focused_task()
+        {
+            self.state.move_task(task, target_status);
+            self.state.remove_kanban_focus();
+        }
     }
 
     fn get_layout(&self) -> Layout {
@@ -168,5 +197,24 @@ impl App {
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {
         self.running = false;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn modal_area_should_not_fail() {
+        let r = Rect {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+
+        let res = App::get_modal_area(r);
+
+        assert_eq!(920, res.x);
     }
 }
