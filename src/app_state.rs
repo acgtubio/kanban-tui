@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::components::{Task, TaskStatus};
+use crate::{
+    components::{Task, TaskConvertError, TaskStatus},
+    db::{Db, SqliteDb, TaskModel},
+};
 
 #[derive(PartialEq, Clone)]
 pub enum Pane {
@@ -14,6 +17,7 @@ pub struct AppState {
     pub active_pane: Pane,
     pub kanban_focus: Option<KanbanFocus>,
     pub modal_focus: Option<TaskStatus>,
+    db: SqliteDb,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -23,12 +27,13 @@ pub struct KanbanFocus {
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(db: SqliteDb) -> Self {
         let mut app_state = AppState {
             tasks: HashMap::new(),
             active_pane: Pane::Kanban(TaskStatus::Pending),
             kanban_focus: None,
             modal_focus: None,
+            db: db,
         };
 
         app_state.tasks.insert(TaskStatus::Pending, vec![]);
@@ -36,6 +41,26 @@ impl AppState {
         app_state.tasks.insert(TaskStatus::Completed, vec![]);
 
         app_state
+    }
+
+    pub fn init_tasks(&mut self) {
+        let tasks_raw = self.db.get_tasks().expect("Unable to fetch kanban data.");
+
+        // TODO: Remove. This is for testing.
+        if tasks_raw.len() == 0 {
+            let _ = self.db.test_init();
+        }
+
+        let tasks = tasks_raw
+            .iter()
+            .map(|task| Task::from_task_model(task))
+            .collect::<Result<Vec<Task>, TaskConvertError>>()
+            .expect("Unable to convert to service models.");
+
+        tasks.iter().for_each(|task| {
+            let t = task.clone();
+            self.add_task(t, task.status);
+        });
     }
 
     pub fn cycle_focus(&mut self) {
@@ -170,10 +195,7 @@ impl AppState {
         self.modal_focus = Some(TaskStatus::Pending);
     }
 
-    // TODO: Add database movement.
-    pub fn move_task(&mut self, task: Task, target_status: TaskStatus) -> Option<Task> {
-        let target_task_list = self.tasks.get_mut(&target_status)?;
-
+    pub fn move_task(&mut self, task: Task, target_status: TaskStatus) {
         let new_task = Task {
             id: task.id,
             name: task.name,
@@ -182,10 +204,22 @@ impl AppState {
             priority: task.priority,
         };
 
+        self.update_task_on_db(new_task.clone());
+        self.move_task_state(new_task, task.status);
+    }
+
+    // TODO: Handle error.
+    fn update_task_on_db(&mut self, task: Task) {
+        let _ = self.db.update_task(TaskModel::from_task(task));
+    }
+
+    fn move_task_state(&mut self, new_task: Task, from_status: TaskStatus) -> Option<Task> {
+        let target_task_list = self.tasks.get_mut(&new_task.status)?;
+
         target_task_list.push(new_task.clone());
 
-        let source_task_list = self.tasks.get_mut(&task.status)?;
-        source_task_list.retain(|t| t.id != task.id);
+        let source_task_list = self.tasks.get_mut(&from_status)?;
+        source_task_list.retain(|t| t.id != new_task.id);
 
         Some(new_task)
     }
@@ -210,7 +244,9 @@ mod tests {
 
     #[test]
     fn pending_task_size_should_1() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -222,7 +258,9 @@ mod tests {
 
     #[test]
     fn should_not_be_focused_kanban() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -234,7 +272,9 @@ mod tests {
 
     #[test]
     fn should_not_be_focused_kanban2() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -248,7 +288,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_pending() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -267,7 +309,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_in_progres_idx1() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -300,7 +344,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_in_progres_idx0() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -334,7 +380,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_completed_idx2() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -386,7 +434,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_completed_idx1() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -437,7 +487,9 @@ mod tests {
 
     #[test]
     fn should_be_focused_on_kanban_completed_idx0() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -490,7 +542,9 @@ mod tests {
 
     #[test]
     fn pane_should_be_pending() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -502,7 +556,9 @@ mod tests {
 
     #[test]
     fn pane_should_be_in_progress() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),
@@ -515,7 +571,9 @@ mod tests {
 
     #[test]
     fn pane_should_be_completed() {
-        let mut app = AppState::new();
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
         app.add_pending_task(Task::new(
             String::from("task1"),
             String::from("heyhey"),

@@ -2,13 +2,13 @@ use rusqlite::{Connection, Error, Result};
 
 use crate::{
     components::{Task, TaskPriority},
-    db::TaskModel,
+    db::{TaskModel, TaskUpdateModel},
 };
 
 pub trait Db {
     fn get_tasks(&self) -> Result<Vec<TaskModel>, Error>;
     fn add_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error>;
-    fn update_task(&self);
+    fn update_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error>;
 }
 
 pub struct SqliteDb {
@@ -18,6 +18,12 @@ pub struct SqliteDb {
 impl SqliteDb {
     pub fn new() -> Result<Self> {
         let conn = Connection::open("kanban.db")?;
+
+        Ok(SqliteDb { conn })
+    }
+
+    pub fn new_in_memory() -> Result<Self> {
+        let conn = Connection::open_in_memory()?;
 
         Ok(SqliteDb { conn })
     }
@@ -106,8 +112,16 @@ impl Db for SqliteDb {
         Ok(res)
     }
 
-    fn update_task(&self) {
-        todo!()
+    fn update_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error> {
+        let res = self.conn.execute("UPDATE tasks SET name = ?1, description = ?2, status = ?3, priority = ?4 WHERE uuid = ?5", (
+                task.name,
+                task.description,
+                task.status,
+                task.priority,
+                task.id
+                ))?;
+
+        Ok(res)
     }
 
     fn get_tasks(&self) -> Result<Vec<TaskModel>, Error> {
