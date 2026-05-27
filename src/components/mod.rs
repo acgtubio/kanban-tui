@@ -5,7 +5,7 @@ mod task;
 mod tasks;
 
 pub use components::Component;
-pub use dialog::MoveDialog;
+pub use dialog::{MoveDialog, NewTaskDialog};
 pub use preview::Preview;
 pub use task::{Task, TaskConvertError, TaskPriority, TaskStatus};
 pub use tasks::Kanban;

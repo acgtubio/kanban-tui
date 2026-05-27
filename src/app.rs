@@ -1,7 +1,7 @@
 use crate::{
     app_state::AppState,
-    components::{Component, Kanban, MoveDialog, Preview, Task, TaskConvertError},
-    db::{Db, SqliteDb},
+    components::{Component, Kanban, MoveDialog, Preview},
+    db::SqliteDb,
     event::{AppEvent, Event, EventHandler},
     theme::create_base_block,
 };
@@ -9,7 +9,7 @@ use ratatui::{
     DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Padding},
+    widgets::Padding,
 };
 
 pub struct App {
@@ -56,7 +56,7 @@ impl App {
                 // Move task modal
                 if self.state.is_moving_task() {
                     let area = frame.area();
-                    let modal_area = App::get_modal_area(area);
+                    let modal_area = App::get_modal_area(area, 80, 10);
 
                     MoveDialog::render_move_dialog(frame, modal_area, &mut self.state);
                 }
@@ -66,10 +66,7 @@ impl App {
         Ok(())
     }
 
-    fn get_modal_area(area: Rect) -> Rect {
-        let width = 80;
-        let height = 10;
-
+    fn get_modal_area(area: Rect, width: u16, height: u16) -> Rect {
         let mid_x = (area.x + area.width) / 2;
         let mid_y = (area.y + area.height) / 2;
 
@@ -196,7 +193,7 @@ mod tests {
             height: 1080,
         };
 
-        let res = App::get_modal_area(r);
+        let res = App::get_modal_area(r, 80, 10);
 
         assert_eq!(920, res.x);
     }

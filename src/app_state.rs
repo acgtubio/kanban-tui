@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    components::{Task, TaskConvertError, TaskStatus},
+    components::{Task, TaskConvertError, TaskPriority, TaskStatus},
     db::{Db, SqliteDb, TaskModel},
 };
 
@@ -12,18 +12,56 @@ pub enum Pane {
     Kanban(TaskStatus),
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct KanbanFocus {
+    pub column: TaskStatus,
+    pub task_idx: Option<usize>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct AddTaskModalFocus {
+    pub current_field: TaskField,
+    pub field_values: TaskFieldValues,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum TaskField {
+    Name,
+    Description,
+    TaskStatus,
+    TaskPriority,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct TaskFieldValues {
+    name: String,
+    description: String,
+    task_status: TaskStatus,
+    task_priority: TaskPriority,
+}
+
+impl Default for TaskFieldValues {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: String::new(),
+            task_status: TaskStatus::Pending,
+            task_priority: TaskPriority::Low,
+        }
+    }
+}
+
+pub struct AddTaskState {
+    pub focused_field: TaskField,
+}
+
 pub struct AppState {
     pub tasks: HashMap<TaskStatus, Vec<Task>>,
     pub active_pane: Pane,
     pub kanban_focus: Option<KanbanFocus>,
     pub modal_focus: Option<TaskStatus>,
+    pub add_task_focus: Option<AddTaskModalFocus>,
     db: SqliteDb,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct KanbanFocus {
-    pub column: TaskStatus,
-    pub task_idx: Option<usize>,
 }
 
 impl AppState {
@@ -33,6 +71,7 @@ impl AppState {
             active_pane: Pane::Kanban(TaskStatus::Pending),
             kanban_focus: None,
             modal_focus: None,
+            add_task_focus: None,
             db: db,
         };
 
@@ -45,11 +84,6 @@ impl AppState {
 
     pub fn init_tasks(&mut self) {
         let tasks_raw = self.db.get_tasks().expect("Unable to fetch kanban data.");
-
-        // TODO: Remove. This is for testing.
-        if tasks_raw.len() == 0 {
-            let _ = self.db.test_init();
-        }
 
         let tasks = tasks_raw
             .iter()
@@ -122,6 +156,32 @@ impl AppState {
                 TaskStatus::Completed => Pane::Kanban(TaskStatus::Pending),
             },
             Pane::MoveTaskModal => self.active_pane.clone(),
+        }
+    }
+
+    pub fn is_focused_add_task(&self) -> bool {
+        self.add_task_focus != None
+    }
+
+    pub fn focus_add_task_modal(&mut self) {
+        if self.is_focused_add_task() {
+            return;
+        }
+
+        self.add_task_focus = Some(AddTaskModalFocus {
+            current_field: TaskField::Name,
+            field_values: TaskFieldValues::default(),
+        });
+    }
+
+    pub fn cycle_add_task_field(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.current_field = match add_task_focus.current_field {
+                TaskField::Name => TaskField::Description,
+                TaskField::Description => TaskField::TaskStatus,
+                TaskField::TaskStatus => TaskField::TaskPriority,
+                TaskField::TaskPriority => TaskField::Name,
+            }
         }
     }
 
@@ -583,5 +643,21 @@ mod tests {
         app.cycle_pane();
 
         assert_eq!(Some(TaskStatus::Completed), app.get_status_by_pane());
+    }
+
+    #[test]
+    fn cycle_field_should_be_description() {
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
+        app.focus_add_task_modal();
+        app.cycle_add_task_field();
+
+        let expected_value = AddTaskModalFocus {
+            current_field: TaskField::Description,
+            field_values: TaskFieldValues::default(),
+        };
+
+        assert_eq!(Some(expected_value), app.add_task_focus);
     }
 }
