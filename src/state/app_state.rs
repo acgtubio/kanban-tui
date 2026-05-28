@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
-    components::{Task, TaskConvertError, TaskPriority, TaskStatus},
+    components::{Task, TaskConvertError, TaskStatus},
     db::{Db, SqliteDb, TaskModel},
+    state::{
+        add_task_state::AddTaskModalState, task_field::TaskField, task_field_value::TaskFieldValues,
+    },
 };
 
 #[derive(PartialEq, Clone)]
@@ -18,49 +21,12 @@ pub struct KanbanFocus {
     pub task_idx: Option<usize>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct AddTaskModalFocus {
-    pub current_field: TaskField,
-    pub field_values: TaskFieldValues,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum TaskField {
-    Name,
-    Description,
-    TaskStatus,
-    TaskPriority,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct TaskFieldValues {
-    name: String,
-    description: String,
-    task_status: TaskStatus,
-    task_priority: TaskPriority,
-}
-
-impl Default for TaskFieldValues {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            description: String::new(),
-            task_status: TaskStatus::Pending,
-            task_priority: TaskPriority::Low,
-        }
-    }
-}
-
-pub struct AddTaskState {
-    pub focused_field: TaskField,
-}
-
 pub struct AppState {
     pub tasks: HashMap<TaskStatus, Vec<Task>>,
     pub active_pane: Pane,
     pub kanban_focus: Option<KanbanFocus>,
     pub modal_focus: Option<TaskStatus>,
-    pub add_task_focus: Option<AddTaskModalFocus>,
+    pub add_task_focus: Option<AddTaskModalState>,
     db: SqliteDb,
 }
 
@@ -168,7 +134,7 @@ impl AppState {
             return;
         }
 
-        self.add_task_focus = Some(AddTaskModalFocus {
+        self.add_task_focus = Some(AddTaskModalState {
             current_field: TaskField::Name,
             field_values: TaskFieldValues::default(),
         });
@@ -176,12 +142,42 @@ impl AppState {
 
     pub fn cycle_add_task_field(&mut self) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
-            add_task_focus.current_field = match add_task_focus.current_field {
-                TaskField::Name => TaskField::Description,
-                TaskField::Description => TaskField::TaskStatus,
-                TaskField::TaskStatus => TaskField::TaskPriority,
-                TaskField::TaskPriority => TaskField::Name,
-            }
+            add_task_focus.next_field();
+        }
+    }
+
+    pub fn add_to_name(&mut self, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.add_to_name(c);
+        }
+    }
+
+    pub fn insert_to_name(&mut self, idx: usize, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.insert_to_name(idx, c);
+        }
+    }
+
+    pub fn add_to_description(&mut self, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.add_to_description(c);
+        }
+    }
+
+    pub fn insert_to_description(&mut self, idx: usize, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.insert_to_description(idx, c);
+        }
+    }
+
+    pub fn next_status(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.next_status();
+        }
+    }
+    pub fn next_priority(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.next_priority();
         }
     }
 
@@ -653,10 +649,31 @@ mod tests {
         app.focus_add_task_modal();
         app.cycle_add_task_field();
 
-        let expected_value = AddTaskModalFocus {
+        let expected_value = AddTaskModalState {
             current_field: TaskField::Description,
             field_values: TaskFieldValues::default(),
         };
+
+        assert_eq!(Some(expected_value), app.add_task_focus);
+    }
+
+    #[test]
+    fn name_field_is_ac() {
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
+        app.focus_add_task_modal();
+
+        let mut default_field_values = TaskFieldValues::default();
+        default_field_values.name = "ac".to_string();
+
+        let expected_value = AddTaskModalState {
+            current_field: TaskField::Name,
+            field_values: default_field_values,
+        };
+
+        app.add_to_name('a');
+        app.add_to_name('c');
 
         assert_eq!(Some(expected_value), app.add_task_focus);
     }

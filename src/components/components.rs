@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Layout, Rect},
 };
 
-use crate::app_state::AppState;
+use crate::state::app_state::AppState;
 
 pub trait Component {
     fn draw(&mut self, frame: &mut Frame, area: Rect, state: &mut AppState);

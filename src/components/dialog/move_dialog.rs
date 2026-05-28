@@ -6,8 +6,8 @@ use ratatui::{
 };
 
 use crate::{
-    app_state::AppState,
     components::TaskStatus,
+    state::app_state::AppState,
     theme::{create_base_block, get_highlight_color},
 };
 

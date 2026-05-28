@@ -45,8 +45,8 @@ impl TaskStatus {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskPriority {
-    Normal,
     Low,
+    Normal,
     High,
     Critical,
 }

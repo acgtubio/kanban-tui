@@ -1,8 +1,8 @@
 use crate::{
-    app_state::AppState,
     components::{Component, Kanban, MoveDialog, Preview},
     db::SqliteDb,
     event::{AppEvent, Event, EventHandler},
+    state::app_state::AppState,
     theme::create_base_block,
 };
 use ratatui::{

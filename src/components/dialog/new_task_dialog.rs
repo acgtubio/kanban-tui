@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{BorderType, Borders},
 };
 
-use crate::{app_state::AppState, theme::create_base_block};
+use crate::{state::app_state::AppState, theme::create_base_block};
 
 pub struct NewTaskDialog {}
 

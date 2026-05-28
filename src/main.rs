@@ -1,10 +1,10 @@
 use crate::{app::App, db::SqliteDb};
 
 pub mod app;
-pub mod app_state;
 pub mod components;
 pub mod db;
 pub mod event;
+pub mod state;
 pub mod theme;
 
 fn main() -> color_eyre::Result<()> {
