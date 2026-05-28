@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    widgets::{BorderType, Borders},
+    widgets::{BorderType, Borders, Clear, Paragraph},
 };
 
 use crate::{state::app_state::AppState, theme::create_base_block};
@@ -18,7 +18,17 @@ impl NewTaskDialog {
 
         let base_layout = NewTaskDialog::get_dialog_layout().split(area);
 
+        frame.render_widget(Clear, area);
         frame.render_widget(base_block, area);
+        NewTaskDialog::draw_title(frame, base_layout[1]);
+    }
+
+    fn draw_title(frame: &mut Frame, area: Rect) {
+        let layout = NewTaskDialog::get_name_layout().split(area);
+
+        let label = Paragraph::new("Task");
+
+        frame.render_widget(label, layout[1]);
     }
 
     fn get_dialog_layout() -> Layout {
@@ -27,7 +37,7 @@ impl NewTaskDialog {
             .constraints([Constraint::Fill(1); 4])
     }
 
-    fn get_title_layout() -> Layout {
+    fn get_name_layout() -> Layout {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Length(1); 3])

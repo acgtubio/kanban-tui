@@ -40,6 +40,9 @@ pub enum AppEvent {
     MoveTask,
     NewTask,
     ConfirmMove,
+    KeyInput(char),
+    Save,
+    PopChar,
 }
 
 /// Terminal event handler.

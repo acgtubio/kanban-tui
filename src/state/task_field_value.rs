@@ -21,6 +21,10 @@ impl TaskFieldValues {
         self.name.pop();
     }
 
+    pub fn remove_char_name(&mut self, idx: usize) {
+        self.name.remove(idx);
+    }
+
     pub fn add_to_description(&mut self, c: char) {
         self.description.push(c);
     }
@@ -31,6 +35,10 @@ impl TaskFieldValues {
 
     pub fn pop_description(&mut self) {
         self.description.pop();
+    }
+
+    pub fn remove_char_description(&mut self, idx: usize) {
+        self.description.remove(idx);
     }
 
     pub fn next_status(&mut self) {

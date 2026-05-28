@@ -158,6 +158,18 @@ impl AppState {
         }
     }
 
+    pub fn pop_name(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.pop_name();
+        }
+    }
+
+    pub fn remove_from_name(&mut self, idx: usize) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.remove_char_name(idx);
+        }
+    }
+
     pub fn add_to_description(&mut self, c: char) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.field_values.add_to_description(c);
@@ -167,6 +179,18 @@ impl AppState {
     pub fn insert_to_description(&mut self, idx: usize, c: char) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.field_values.insert_to_description(idx, c);
+        }
+    }
+
+    pub fn pop_description(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.pop_description();
+        }
+    }
+
+    pub fn remove_from_description(&mut self, idx: usize) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.remove_char_description(idx);
         }
     }
 
@@ -206,12 +230,17 @@ impl AppState {
     }
 
     pub fn remove_kanban_focus(&mut self) {
+        // TODO: Find a way to retain the previous task status.
         if self.is_moving_task() {
             self.modal_focus = None;
-            // TODO: Find a way to retain the previous task status.
 
             self.active_pane = Pane::Kanban(TaskStatus::Pending);
             return;
+        }
+        if self.is_focused_add_task() {
+            self.add_task_focus = None;
+
+            self.active_pane = Pane::Kanban(TaskStatus::Pending);
         }
 
         self.kanban_focus = None;
@@ -674,6 +703,74 @@ mod tests {
 
         app.add_to_name('a');
         app.add_to_name('c');
+
+        assert_eq!(Some(expected_value), app.add_task_focus);
+    }
+
+    #[test]
+    fn name_field_is_abc() {
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
+        app.focus_add_task_modal();
+
+        let mut default_field_values = TaskFieldValues::default();
+        default_field_values.name = "abc".to_string();
+
+        let expected_value = AddTaskModalState {
+            current_field: TaskField::Name,
+            field_values: default_field_values,
+        };
+
+        app.add_to_name('a');
+        app.add_to_name('c');
+        app.insert_to_name(1, 'b');
+
+        assert_eq!(Some(expected_value), app.add_task_focus);
+    }
+
+    #[test]
+    fn name_field_is_ab_from_pop() {
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
+        app.focus_add_task_modal();
+
+        let mut default_field_values = TaskFieldValues::default();
+        default_field_values.name = "ab".to_string();
+
+        let expected_value = AddTaskModalState {
+            current_field: TaskField::Name,
+            field_values: default_field_values,
+        };
+
+        app.add_to_name('a');
+        app.add_to_name('c');
+        app.insert_to_name(1, 'b');
+        app.pop_name();
+
+        assert_eq!(Some(expected_value), app.add_task_focus);
+    }
+
+    #[test]
+    fn name_field_is_ac_from_remove() {
+        let db = SqliteDb::new_in_memory().expect("Should not throw error");
+
+        let mut app = AppState::new(db);
+        app.focus_add_task_modal();
+
+        let mut default_field_values = TaskFieldValues::default();
+        default_field_values.name = "ac".to_string();
+
+        let expected_value = AddTaskModalState {
+            current_field: TaskField::Name,
+            field_values: default_field_values,
+        };
+
+        app.add_to_name('a');
+        app.add_to_name('c');
+        app.insert_to_name(1, 'b');
+        app.remove_from_name(1);
 
         assert_eq!(Some(expected_value), app.add_task_focus);
     }
