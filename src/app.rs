@@ -1,15 +1,16 @@
 use crate::{
-    app_state::AppState,
-    components::{Component, Kanban, MoveDialog, Preview, Task, TaskConvertError},
-    db::{Db, SqliteDb},
+    components::{Component, Kanban, MoveDialog, NewTaskDialog, Preview},
+    db::SqliteDb,
     event::{AppEvent, Event, EventHandler},
+    handler::AddTaskModalHandler,
+    state::{app_state::AppState, task_field::TaskField},
     theme::create_base_block,
 };
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Padding},
+    widgets::Padding,
 };
 
 pub struct App {
@@ -56,9 +57,17 @@ impl App {
                 // Move task modal
                 if self.state.is_moving_task() {
                     let area = frame.area();
-                    let modal_area = App::get_modal_area(area);
+                    let modal_area = App::get_modal_area(area, 80, 10);
 
                     MoveDialog::render_move_dialog(frame, modal_area, &mut self.state);
+                }
+
+                // Add task modal
+                if self.state.is_focused_add_task() {
+                    let area = frame.area();
+                    let modal_area = App::get_modal_area(area, 60, 20);
+
+                    NewTaskDialog::render_new_task_dialog(frame, modal_area, &mut self.state);
                 }
             })?;
             self.handle_events()?;
@@ -66,10 +75,7 @@ impl App {
         Ok(())
     }
 
-    fn get_modal_area(area: Rect) -> Rect {
-        let width = 80;
-        let height = 10;
-
+    fn get_modal_area(area: Rect, width: u16, height: u16) -> Rect {
         let mid_x = (area.x + area.width) / 2;
         let mid_y = (area.y + area.height) / 2;
 
@@ -93,7 +99,7 @@ impl App {
                 crossterm::event::Event::Key(key_event)
                     if key_event.kind == crossterm::event::KeyEventKind::Press =>
                 {
-                    self.handle_key_event(key_event)?
+                    self.handle_key_event(key_event)
                 }
                 _ => {}
             },
@@ -103,11 +109,26 @@ impl App {
                 AppEvent::FocusIn => self.state.focus_kanban(),
                 AppEvent::FocusOut => self.state.remove_kanban_focus(),
                 AppEvent::MoveTask => self.open_move_dialog(),
-                AppEvent::NewTask => todo!(),
+                AppEvent::NewTask => self.open_new_task_dialog(),
                 AppEvent::ConfirmMove => self.handle_move(),
+                AppEvent::KeyInput(ch) => self.handle_char_input(ch),
+                AppEvent::Save => todo!(),
+                AppEvent::PopChar => self.handle_pop_char(),
             },
         }
         Ok(())
+    }
+
+    fn handle_char_input(&mut self, ch: char) {
+        if self.state.is_focused_add_task() {
+            AddTaskModalHandler::handle_char_input(&mut self.state, ch)
+        }
+    }
+
+    fn handle_pop_char(&mut self) {
+        if self.state.is_focused_add_task() {
+            AddTaskModalHandler::handle_char_pop(&mut self.state)
+        }
     }
 
     // Moves focus across different panes.
@@ -129,13 +150,38 @@ impl App {
         self.state.open_move_task_modal();
     }
 
-    pub fn handle_focused_column_event() {}
+    fn open_new_task_dialog(&mut self) {
+        if self.state.is_focused_add_task() {
+            return;
+        }
+        self.state.focus_add_task_modal();
+    }
 
     /// Handles the key events and updates the state of [`App`].
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+        if self.state.is_focused_add_task() {
+            self.handle_add_task_events(key_event);
+            return;
+        }
+
+        self.handle_base_key_events(key_event);
+    }
+
+    pub fn handle_add_task_events(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char(ch) => self.events.send(AppEvent::KeyInput(ch)),
+            KeyCode::Enter => self.events.send(AppEvent::Save),
+            KeyCode::Backspace => self.events.send(AppEvent::PopChar),
+            KeyCode::Esc => self.events.send(AppEvent::FocusOut),
+            _ => {}
+        }
+    }
+
+    pub fn handle_base_key_events(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
+            KeyCode::Char('n') => self.events.send(AppEvent::NewTask),
             KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
             KeyCode::Enter => self.handle_enter(),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
@@ -144,7 +190,6 @@ impl App {
             }
             _ => {}
         }
-        Ok(())
     }
 
     fn handle_enter(&mut self) {
@@ -196,7 +241,7 @@ mod tests {
             height: 1080,
         };
 
-        let res = App::get_modal_area(r);
+        let res = App::get_modal_area(r, 80, 10);
 
         assert_eq!(920, res.x);
     }

@@ -1,6 +1,6 @@
 use ratatui::{Frame, layout::Rect};
 
-use crate::{app_state::AppState, components::Component};
+use crate::{components::Component, state::app_state::AppState};
 
 pub struct Preview {}
 

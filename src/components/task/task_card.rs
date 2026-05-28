@@ -1,14 +1,14 @@
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Paragraph},
 };
 
 use crate::{
-    app_state::{AppState, KanbanFocus},
     components::{Task, TaskPriority},
+    state::app_state::{AppState, KanbanFocus},
     theme::get_highlight_color,
 };
 

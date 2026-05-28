@@ -40,63 +40,6 @@ impl SqliteDb {
             (),
         )
     }
-
-    pub fn test_init(&self) -> Result<usize, rusqlite::Error> {
-        let task = TaskModel::from_task(Task::new(
-            String::from("task1"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        let task2 = TaskModel::from_task(Task::new(
-            String::from("task2"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        let task3 = TaskModel::from_task(Task::new(
-            String::from("task3"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        let task4 = TaskModel::from_task(Task::new(
-            String::from("task4"),
-            String::from("heyhey"),
-            TaskPriority::High,
-        ));
-
-        let res = self.conn.execute("INSERT INTO tasks(uuid, name, description, status, priority) VALUES(?1, ?2, ?3, ?4 ,?5)", (
-                task.id,
-                task.name,
-                task.description,
-                task.status,
-                task.priority
-                ))?;
-
-        let res = self.conn.execute("INSERT INTO tasks(uuid, name, description, status, priority) VALUES(?1, ?2, ?3, ?4 ,?5)", (
-                task2.id,
-                task2.name,
-                task2.description,
-                task2.status,
-                task2.priority
-                ))?;
-
-        let res = self.conn.execute("INSERT INTO tasks(uuid, name, description, status, priority) VALUES(?1, ?2, ?3, ?4 ,?5)", (
-                task3.id,
-                task3.name,
-                task3.description,
-                task3.status,
-                task3.priority
-                ))?;
-
-        let res = self.conn.execute("INSERT INTO tasks(uuid, name, description, status, priority) VALUES(?1, ?2, ?3, ?4 ,?5)", (
-                task4.id,
-                task4.name,
-                task4.description,
-                task4.status,
-                task4.priority
-                ))?;
-
-        Ok(res)
-    }
 }
 
 impl Db for SqliteDb {

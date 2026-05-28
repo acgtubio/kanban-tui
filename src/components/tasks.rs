@@ -8,8 +8,8 @@ use ratatui::{
 };
 
 use crate::{
-    app_state::{AppState, Pane},
     components::task::TaskCard,
+    state::app_state::{AppState, Pane},
 };
 
 use super::Component;
