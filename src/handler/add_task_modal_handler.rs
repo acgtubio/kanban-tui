@@ -22,4 +22,20 @@ impl AddTaskModalHandler {
             }
         }
     }
+
+    pub fn next_option(state: &mut AppState, field: TaskField) {
+        match field {
+            TaskField::TaskStatus => state.next_status(),
+            TaskField::TaskPriority => state.next_priority(),
+            _ => (),
+        }
+    }
+
+    pub fn prev_option(state: &mut AppState, field: TaskField) {
+        match field {
+            TaskField::TaskStatus => state.prev_status(),
+            TaskField::TaskPriority => state.prev_priority(),
+            _ => (),
+        }
+    }
 }

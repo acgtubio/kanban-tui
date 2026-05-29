@@ -105,7 +105,7 @@ impl App {
             },
             Event::App(app_event) => match app_event {
                 AppEvent::Quit => self.quit(),
-                AppEvent::SwitchWindow => self.cycle_focus(),
+                AppEvent::SwitchContext => self.cycle_focus(),
                 AppEvent::FocusIn => self.state.focus_kanban(),
                 AppEvent::FocusOut => self.state.remove_kanban_focus(),
                 AppEvent::MoveTask => self.open_move_dialog(),
@@ -120,9 +120,19 @@ impl App {
     }
 
     fn handle_char_input(&mut self, ch: char) {
-        if self.state.is_focused_add_task() {
-            AddTaskModalHandler::handle_char_input(&mut self.state, ch)
+        if !self.state.is_focused_add_task() {
+            return;
         }
+
+        if let Some(field) = self.state.get_add_task_focused_field() {
+            match ch {
+                'l' => AddTaskModalHandler::next_option(&mut self.state, field),
+                'h' => AddTaskModalHandler::prev_option(&mut self.state, field),
+                _ => (),
+            }
+        }
+
+        AddTaskModalHandler::handle_char_input(&mut self.state, ch)
     }
 
     fn handle_pop_char(&mut self) {
@@ -135,11 +145,16 @@ impl App {
     fn cycle_focus(&mut self) {
         if self.state.is_moving_task() {
             self.state.cycle_task_status_focus();
+            return;
+        }
+        if self.state.is_focused_add_task() {
+            self.state.cycle_add_task_field();
+            return;
         }
         if !self.state.is_focused_kanban() {
-            self.state.cycle_focus();
+            self.state.cycle_focus()
         } else {
-            self.state.cycle_kanban_focus();
+            self.state.cycle_kanban_focus()
         }
     }
 
@@ -173,6 +188,7 @@ impl App {
             KeyCode::Enter => self.events.send(AppEvent::Save),
             KeyCode::Backspace => self.events.send(AppEvent::PopChar),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
+            KeyCode::Tab => self.events.send(AppEvent::SwitchContext),
             _ => {}
         }
     }
@@ -182,7 +198,7 @@ impl App {
             KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
             KeyCode::Char('n') => self.events.send(AppEvent::NewTask),
-            KeyCode::Tab => self.events.send(AppEvent::SwitchWindow),
+            KeyCode::Tab => self.events.send(AppEvent::SwitchContext),
             KeyCode::Enter => self.handle_enter(),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
             KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {

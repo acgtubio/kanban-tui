@@ -140,6 +140,14 @@ impl AppState {
         });
     }
 
+    pub fn get_add_task_focused_field(&self) -> Option<TaskField> {
+        let Some(state) = &self.add_task_focus else {
+            return None;
+        };
+
+        Some(state.current_field.clone())
+    }
+
     pub fn cycle_add_task_field(&mut self) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.next_field();
@@ -191,6 +199,17 @@ impl AppState {
     pub fn remove_from_description(&mut self, idx: usize) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.field_values.remove_char_description(idx);
+        }
+    }
+
+    pub fn prev_status(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.prev_status();
+        }
+    }
+    pub fn prev_priority(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.field_values.prev_priority();
         }
     }
 
