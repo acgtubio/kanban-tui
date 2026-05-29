@@ -59,7 +59,7 @@ impl AppState {
 
         tasks.iter().for_each(|task| {
             let t = task.clone();
-            self.add_task(t, task.status);
+            self.add_task(t);
         });
     }
 
@@ -276,22 +276,22 @@ impl AppState {
         }
     }
 
-    pub fn add_task(&mut self, task: Task, status: TaskStatus) {
-        if let Some(task_list) = self.tasks.get_mut(&status) {
+    pub fn save_new_task(&mut self) {
+        let Some(add_task_state) = &mut self.add_task_focus else {
+            return;
+        };
+
+        let task = Task::from(add_task_state.field_values.clone());
+        let task_model = TaskModel::from(task.clone());
+        // TODO: Handle errors.
+        let _ = self.db.add_task(task_model);
+        self.add_task(task);
+    }
+
+    pub fn add_task(&mut self, task: Task) {
+        if let Some(task_list) = self.tasks.get_mut(&task.status) {
             task_list.push(task);
         }
-    }
-
-    pub fn add_pending_task(&mut self, task: Task) {
-        self.add_task(task, TaskStatus::Pending);
-    }
-
-    pub fn add_in_progress_task(&mut self, task: Task) {
-        self.add_task(task, TaskStatus::InProgress);
-    }
-
-    pub fn add_completed_task(&mut self, task: Task) {
-        self.add_task(task, TaskStatus::Completed);
     }
 
     pub fn open_move_task_modal(&mut self) {
@@ -314,7 +314,7 @@ impl AppState {
 
     // TODO: Handle error.
     fn update_task_on_db(&mut self, task: Task) {
-        let _ = self.db.update_task(TaskModel::from_task(task));
+        let _ = self.db.update_task(TaskModel::from(task));
     }
 
     fn move_task_state(&mut self, new_task: Task, from_status: TaskStatus) -> Option<Task> {
@@ -351,9 +351,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
 
@@ -365,9 +366,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
 
@@ -379,9 +381,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
         app.focus_kanban();
@@ -395,9 +398,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
         app.focus_kanban();
@@ -416,19 +420,22 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
 
@@ -451,19 +458,22 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
 
@@ -487,36 +497,41 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
 
-        app.add_in_progress_task(Task::new(
-            String::from("task2"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
-            String::from("task3"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-
-        app.add_completed_task(Task::new(
-            String::from("task4"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task5"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task6"),
-            String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
         app.cycle_focus();
@@ -541,36 +556,41 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
 
-        app.add_in_progress_task(Task::new(
-            String::from("task2"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
-            String::from("task3"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-
-        app.add_completed_task(Task::new(
-            String::from("task4"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task5"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task6"),
-            String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
         app.cycle_focus();
@@ -594,36 +614,41 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
+            TaskPriority::Low,
+        ));
+        app.add_task(Task::new_custom(
+            String::from("task1"),
+            String::from("heyhey"),
+            TaskStatus::InProgress,
             TaskPriority::Low,
         ));
 
-        app.add_in_progress_task(Task::new(
-            String::from("task2"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-        app.add_in_progress_task(Task::new(
-            String::from("task3"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
-
-        app.add_completed_task(Task::new(
-            String::from("task4"),
+        app.add_task(Task::new_custom(
+            String::from("task1"),
             String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task5"),
-            String::from("heyhey"),
-            TaskPriority::Low,
-        ));
-        app.add_completed_task(Task::new(
-            String::from("task6"),
-            String::from("heyhey"),
+            TaskStatus::Completed,
             TaskPriority::Low,
         ));
         app.cycle_focus();
@@ -649,9 +674,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
 
@@ -663,9 +689,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
         app.cycle_pane();
@@ -678,9 +705,10 @@ mod tests {
         let db = SqliteDb::new_in_memory().expect("Should not throw error");
 
         let mut app = AppState::new(db);
-        app.add_pending_task(Task::new(
+        app.add_task(Task::new_custom(
             String::from("task1"),
             String::from("heyhey"),
+            TaskStatus::Pending,
             TaskPriority::Low,
         ));
         app.cycle_pane();

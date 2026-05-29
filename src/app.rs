@@ -3,7 +3,7 @@ use crate::{
     db::SqliteDb,
     event::{AppEvent, Event, EventHandler},
     handler::AddTaskModalHandler,
-    state::{app_state::AppState, task_field::TaskField},
+    state::app_state::AppState,
     theme::create_base_block,
 };
 use ratatui::{
@@ -112,11 +112,19 @@ impl App {
                 AppEvent::NewTask => self.open_new_task_dialog(),
                 AppEvent::ConfirmMove => self.handle_move(),
                 AppEvent::KeyInput(ch) => self.handle_char_input(ch),
-                AppEvent::Save => todo!(),
+                AppEvent::Save => self.handle_save(),
                 AppEvent::PopChar => self.handle_pop_char(),
             },
         }
         Ok(())
+    }
+
+    fn handle_save(&mut self) {
+        if self.state.is_focused_add_task() {
+            self.state.save_new_task();
+            self.events.send(AppEvent::FocusOut);
+            ()
+        }
     }
 
     fn handle_char_input(&mut self, ch: char) {

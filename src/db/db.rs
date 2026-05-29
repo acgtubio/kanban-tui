@@ -1,9 +1,6 @@
 use rusqlite::{Connection, Error, Result};
 
-use crate::{
-    components::{Task, TaskPriority},
-    db::{TaskModel, TaskUpdateModel},
-};
+use crate::db::TaskModel;
 
 pub trait Db {
     fn get_tasks(&self) -> Result<Vec<TaskModel>, Error>;

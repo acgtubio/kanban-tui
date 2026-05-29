@@ -3,7 +3,7 @@ use std::str::FromStr;
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ValueRef};
 use uuid::Uuid;
 
-use crate::db::TaskModel;
+use crate::{db::TaskModel, state::task_field_value::TaskFieldValues};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskStatus {
@@ -165,6 +165,17 @@ impl PartialEq for Task {
     }
 }
 
+impl From<TaskFieldValues> for Task {
+    fn from(value: TaskFieldValues) -> Self {
+        Task::new_custom(
+            value.name,
+            value.description,
+            value.task_status,
+            value.task_priority,
+        )
+    }
+}
+
 impl Task {
     pub fn new(name: String, description: String, prio: TaskPriority) -> Self {
         Task {
@@ -172,6 +183,21 @@ impl Task {
             name: name,
             description: description,
             status: TaskStatus::Pending,
+            priority: prio,
+        }
+    }
+
+    pub fn new_custom(
+        name: String,
+        description: String,
+        status: TaskStatus,
+        prio: TaskPriority,
+    ) -> Self {
+        Task {
+            id: Uuid::new_v4(),
+            name: name,
+            description: description,
+            status: status,
             priority: prio,
         }
     }
