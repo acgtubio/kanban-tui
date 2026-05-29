@@ -8,14 +8,14 @@ pub struct TaskModel {
     pub priority: String,
 }
 
-impl TaskModel {
-    pub fn from_task(task: Task) -> Self {
+impl From<Task> for TaskModel {
+    fn from(value: Task) -> Self {
         TaskModel {
-            id: task.id.to_string(),
-            name: task.name,
-            description: task.description,
-            status: task.status.to_string(),
-            priority: task.priority.to_string(),
+            id: value.id.to_string(),
+            name: value.name,
+            description: value.description,
+            status: value.status.to_string(),
+            priority: value.priority.to_string(),
         }
     }
 }
