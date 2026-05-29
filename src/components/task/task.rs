@@ -111,6 +111,17 @@ impl TaskPriority {
         text.into()
     }
 
+    pub fn to_readable_string(&self) -> String {
+        let text = match self {
+            TaskPriority::Normal => "Normal",
+            TaskPriority::Low => "Low",
+            TaskPriority::High => "High",
+            TaskPriority::Critical => "Critical",
+        };
+
+        text.into()
+    }
+
     pub fn from_string(s: &str) -> Result<Self, ()> {
         match s {
             "NORMAL" => Ok(TaskPriority::Normal),
