@@ -338,6 +338,18 @@ impl AppState {
 
         Some(task.clone())
     }
+
+    // TODO: Handle error
+    pub fn remove_selected_task(&mut self) -> Option<()> {
+        let task = self.get_focused_task()?;
+        let target_task_list = self.tasks.get_mut(&task.status)?;
+
+        let _ = self.db.delete_task(task.id.to_string());
+
+        target_task_list.retain(|t| t.id != task.id);
+
+        Some(())
+    }
 }
 
 #[cfg(test)]

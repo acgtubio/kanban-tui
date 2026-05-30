@@ -3,9 +3,10 @@ use rusqlite::{Connection, Error, Result};
 use crate::db::TaskModel;
 
 pub trait Db {
-    fn get_tasks(&self) -> Result<Vec<TaskModel>, Error>;
     fn add_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error>;
+    fn get_tasks(&self) -> Result<Vec<TaskModel>, Error>;
     fn update_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error>;
+    fn delete_task(&self, uuid: String) -> Result<usize, Error>;
 }
 
 pub struct SqliteDb {
@@ -52,18 +53,6 @@ impl Db for SqliteDb {
         Ok(res)
     }
 
-    fn update_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error> {
-        let res = self.conn.execute("UPDATE tasks SET name = ?1, description = ?2, status = ?3, priority = ?4 WHERE uuid = ?5", (
-                task.name,
-                task.description,
-                task.status,
-                task.priority,
-                task.id
-                ))?;
-
-        Ok(res)
-    }
-
     fn get_tasks(&self) -> Result<Vec<TaskModel>, Error> {
         let mut stmt = self.conn.prepare("SELECT * FROM tasks")?;
         let tasks_iter = stmt.query_map([], |row| {
@@ -82,5 +71,26 @@ impl Db for SqliteDb {
         }
 
         Ok(tasks)
+    }
+
+    fn update_task(&self, task: TaskModel) -> Result<usize, rusqlite::Error> {
+        let res = self.conn.execute("UPDATE tasks SET name = ?1, description = ?2, status = ?3, priority = ?4 WHERE uuid = ?5", (
+                task.name,
+                task.description,
+                task.status,
+                task.priority,
+                task.id
+                ))?;
+
+        Ok(res)
+    }
+
+    // TODO: Update to just archiving?
+    fn delete_task(&self, uuid: String) -> Result<usize, Error> {
+        let res = self
+            .conn
+            .execute("DELETE FROM tasks WHERE uuid = ?1", (uuid,))?;
+
+        Ok(res)
     }
 }

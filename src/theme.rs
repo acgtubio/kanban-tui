@@ -25,7 +25,10 @@ pub fn create_base_modal_block<'a>() -> Block<'a> {
 }
 
 pub fn create_base_highlighted_block<'a>() -> Block<'a> {
-    create_base_block().border_style(Style::new().yellow())
+    create_base_block()
+        .border_style(Style::new().yellow())
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
 }
 
 pub fn create_bordered_block<'a>() -> Block<'a> {

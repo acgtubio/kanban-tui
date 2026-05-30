@@ -114,6 +114,7 @@ impl App {
                 AppEvent::KeyInput(ch) => self.handle_char_input(ch),
                 AppEvent::Save => self.handle_save(),
                 AppEvent::PopChar => self.handle_pop_char(),
+                AppEvent::Delete => self.handle_delete(),
             },
         }
         Ok(())
@@ -125,6 +126,14 @@ impl App {
             self.events.send(AppEvent::FocusOut);
             ()
         }
+    }
+
+    fn handle_delete(&mut self) {
+        if !self.state.is_focused_kanban() {
+            return;
+        }
+
+        self.state.remove_selected_task();
     }
 
     fn handle_char_input(&mut self, ch: char) {
@@ -206,6 +215,7 @@ impl App {
             KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
             KeyCode::Char('n') => self.events.send(AppEvent::NewTask),
+            KeyCode::Char('d') => self.events.send(AppEvent::Delete),
             KeyCode::Tab => self.events.send(AppEvent::SwitchContext),
             KeyCode::Enter => self.handle_enter(),
             KeyCode::Esc => self.events.send(AppEvent::FocusOut),
