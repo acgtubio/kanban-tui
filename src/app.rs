@@ -1,8 +1,9 @@
 use crate::{
     components::{Component, Kanban, MoveDialog, NewTaskDialog, Preview},
     db::SqliteDb,
-    event::{AppEvent, Event, EventHandler},
-    handler::AddTaskModalHandler,
+    event::{AddTaskEvent, AppEvent, Event, EventHandler, KanbanScreenEvent, MainScreenEvent},
+    event_mux::handle_events,
+    handler::{AddTaskModalHandler, main_screen_handler::KanbanScreenHandler},
     state::app_state::AppState,
     theme::create_base_block,
 };
@@ -99,25 +100,27 @@ impl App {
                 crossterm::event::Event::Key(key_event)
                     if key_event.kind == crossterm::event::KeyEventKind::Press =>
                 {
-                    self.handle_key_event(key_event)
+                    handle_events(&mut self.events, key_event, self.state.active_pane.clone());
+                    // self.handle_key_event(key_event)
                 }
                 _ => {}
             },
             Event::App(app_event) => match app_event {
+                AppEvent::KanbanScreenEvent(event) => self.handle_kanban_screen_event(event),
+                AppEvent::AddTaskEvent(event) => self.handle_add_task_event(event),
+                AppEvent::MoveTaskEvent(move_task_event) => todo!(),
                 AppEvent::Quit => self.quit(),
-                AppEvent::SwitchContext => self.cycle_focus(),
-                AppEvent::FocusIn => self.state.focus_kanban(),
-                AppEvent::FocusOut => self.state.remove_kanban_focus(),
-                AppEvent::MoveTask => self.open_move_dialog(),
-                AppEvent::NewTask => self.open_new_task_dialog(),
-                AppEvent::ConfirmMove => self.handle_move(),
-                AppEvent::KeyInput(ch) => self.handle_char_input(ch),
-                AppEvent::Save => self.handle_save(),
-                AppEvent::PopChar => self.handle_pop_char(),
-                AppEvent::Delete => self.handle_delete(),
             },
         }
         Ok(())
+    }
+
+    fn handle_kanban_screen_event(&mut self, event: KanbanScreenEvent) {
+        KanbanScreenHandler::handle_events(&mut self.state, event);
+    }
+
+    fn handle_add_task_event(&mut self, event: AddTaskEvent) {
+        AddTaskModalHandler::handle_events(&mut self.state, event);
     }
 
     fn handle_save(&mut self) {

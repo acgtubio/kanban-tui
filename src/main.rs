@@ -4,6 +4,7 @@ pub mod app;
 pub mod components;
 pub mod db;
 pub mod event;
+pub mod event_mux;
 pub mod handler;
 pub mod state;
 pub mod theme;

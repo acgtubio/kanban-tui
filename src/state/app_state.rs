@@ -12,6 +12,8 @@ use crate::{
 pub enum Pane {
     Preview,
     MoveTaskModal,
+    AddTask,
+    Column,
     Kanban(TaskStatus),
 }
 
@@ -121,7 +123,7 @@ impl AppState {
                 TaskStatus::InProgress => Pane::Kanban(TaskStatus::Completed),
                 TaskStatus::Completed => Pane::Kanban(TaskStatus::Pending),
             },
-            Pane::MoveTaskModal => self.active_pane.clone(),
+            _ => self.active_pane.clone(),
         }
     }
 
@@ -249,20 +251,23 @@ impl AppState {
     }
 
     pub fn remove_kanban_focus(&mut self) {
-        // TODO: Find a way to retain the previous task status.
-        if self.is_moving_task() {
-            self.modal_focus = None;
+        self.kanban_focus = None;
+    }
 
-            self.active_pane = Pane::Kanban(TaskStatus::Pending);
+    pub fn remove_move_task_focus(&mut self) {
+        if !self.is_moving_task() {
             return;
         }
-        if self.is_focused_add_task() {
-            self.add_task_focus = None;
+        self.modal_focus = None;
+        self.active_pane = Pane::Kanban(TaskStatus::Pending);
+    }
 
-            self.active_pane = Pane::Kanban(TaskStatus::Pending);
+    pub fn remove_add_task_focus(&mut self) {
+        if !self.is_focused_add_task() {
+            return;
         }
-
-        self.kanban_focus = None;
+        self.add_task_focus = None;
+        self.active_pane = Pane::Kanban(TaskStatus::Pending);
     }
 
     fn get_task_size_by_status(&mut self, status: &TaskStatus) -> Option<usize> {
