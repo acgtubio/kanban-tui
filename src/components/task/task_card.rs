@@ -31,7 +31,7 @@ impl TaskCard {
         style
     }
 
-    fn get_block_style(focus: &Option<KanbanFocus>, idx: usize) -> Style {
+    fn get_block_style(focus: &Option<KanbanFocus>, idx: isize) -> Style {
         let style = if let Some(kanban_focus) = focus
             && let Some(focus_idx) = kanban_focus.task_idx
             && focus_idx == idx
@@ -44,7 +44,7 @@ impl TaskCard {
         style
     }
 
-    pub fn render_card(frame: &mut Frame, area: Rect, state: &AppState, task: &Task, idx: usize) {
+    pub fn render_card(frame: &mut Frame, area: Rect, state: &AppState, task: &Task, idx: isize) {
         let block_style = TaskCard::get_block_style(&state.kanban_focus, idx);
         let prefix_style = TaskCard::get_prefix_style(task.get_priority());
 
