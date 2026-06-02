@@ -108,7 +108,7 @@ impl AppState {
             return;
         };
 
-        if index < max_len.clone() as isize - 1 && index - 1 >= 0 {
+        if index < max_len.clone() as isize - 1 && index + increment >= 0 {
             focus.task_idx = Some(index as isize + increment);
         } else {
             focus.task_idx = Some(0);
