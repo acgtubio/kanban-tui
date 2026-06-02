@@ -6,6 +6,18 @@ use crate::{
 pub struct AddTaskModalHandler;
 
 impl AddTaskModalHandler {
+    pub fn handle_events(state: &mut AppState, event: AddTaskEvent) {
+        match event {
+            AddTaskEvent::Save => AddTaskModalHandler::handle_save(state),
+            AddTaskEvent::Input(input_event) => {
+                AddTaskModalHandler::handle_input_event(state, input_event)
+            }
+            AddTaskEvent::Navigate(navigation_event) => {
+                AddTaskModalHandler::handle_nav_event(state, navigation_event)
+            }
+        }
+    }
+
     pub fn handle_char_input(state: &mut AppState, ch: char) {
         if let Some(add_task_modal_state) = &mut state.add_task_focus {
             match add_task_modal_state.current_field {
@@ -42,20 +54,9 @@ impl AddTaskModalHandler {
         }
     }
 
-    pub fn handle_events(state: &mut AppState, event: AddTaskEvent) {
-        match event {
-            AddTaskEvent::Save => AddTaskModalHandler::handle_save(state),
-            AddTaskEvent::Input(input_event) => {
-                AddTaskModalHandler::handle_input_event(state, input_event)
-            }
-            AddTaskEvent::Navigate(navigation_event) => {
-                AddTaskModalHandler::handle_nav_event(state, navigation_event)
-            }
-        }
-    }
-
     fn handle_nav_event(state: &mut AppState, event: NavigationEvent) {
         match event {
+            NavigationEvent::FocusIn => state.focus_add_task_modal(),
             NavigationEvent::FocusOut => state.remove_add_task_focus(),
             NavigationEvent::Next => state.cycle_add_task_field(),
             _ => (),

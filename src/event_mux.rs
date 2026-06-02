@@ -1,9 +1,9 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     event::{
-        AddTaskEvent, AppEvent, EventHandler, InputEvent, KanbanScreenEvent, MoveTaskEvent,
-        NavigationEvent,
+        AddTaskEvent, AppEvent, EventHandler, InputEvent, KanbanScreenEvent, MainScreenEvent,
+        MoveTaskEvent, NavigationEvent,
     },
     state::app_state::Pane,
 };
@@ -32,9 +32,10 @@ pub fn handle_move_task_event(event_handler: &mut EventHandler, key_event: KeyEv
         KeyCode::Tab => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
             NavigationEvent::Next,
         ))),
-        KeyCode::Enter => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
-            NavigationEvent::FocusIn,
+        KeyCode::Esc => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
+            NavigationEvent::FocusOut,
         ))),
+        KeyCode::Enter => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::ConfirmMove)),
         _ => {}
     }
 }
@@ -45,18 +46,30 @@ pub fn handle_kanban_event(event_handler: &mut EventHandler, key_event: KeyEvent
         KeyCode::Enter => event_handler.send(AppEvent::KanbanScreenEvent(
             KanbanScreenEvent::Navigate(NavigationEvent::FocusIn),
         )),
-        KeyCode::Tab => event_handler.send(AppEvent::KanbanScreenEvent(
-            KanbanScreenEvent::Navigate(NavigationEvent::Next),
+        KeyCode::Tab => event_handler.send(AppEvent::MainScreen(MainScreenEvent::Navigate(
+            NavigationEvent::Next,
+        ))),
+        KeyCode::Char('n') => event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::Navigate(
+            NavigationEvent::FocusIn,
+        ))),
+        _ => {}
+    }
+}
+
+pub fn handle_column_event(event_handler: &mut EventHandler, key_event: KeyEvent) {
+    match key_event.code {
+        KeyCode::Esc => event_handler.send(AppEvent::KanbanScreenEvent(
+            KanbanScreenEvent::Navigate(NavigationEvent::FocusOut),
         )),
         KeyCode::Char('m') => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
             NavigationEvent::FocusIn,
         ))),
-        KeyCode::Char('n') => {
-            event_handler.send(AppEvent::KanbanScreenEvent(KanbanScreenEvent::CreateTask))
-        }
         KeyCode::Char('d') => {
             event_handler.send(AppEvent::KanbanScreenEvent(KanbanScreenEvent::Delete))
         }
+        KeyCode::Tab => event_handler.send(AppEvent::KanbanScreenEvent(
+            KanbanScreenEvent::Navigate(NavigationEvent::Next),
+        )),
         _ => {}
     }
 }
@@ -67,6 +80,6 @@ pub fn handle_events(event_handler: &mut EventHandler, key_event: KeyEvent, curr
         Pane::MoveTaskModal => handle_move_task_event(event_handler, key_event),
         Pane::AddTask => handle_add_task_events(event_handler, key_event),
         Pane::Kanban(_) => handle_kanban_event(event_handler, key_event),
-        Pane::Column => todo!(),
+        Pane::Column => handle_column_event(event_handler, key_event),
     }
 }
