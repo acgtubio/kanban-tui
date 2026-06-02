@@ -91,7 +91,7 @@ impl AddTaskModalHandler {
     fn handle_save(state: &mut AppState) {
         if state.is_focused_add_task() {
             state.save_new_task();
-            state.remove_kanban_focus();
+            state.remove_add_task_focus();
             ()
         }
     }
