@@ -1,14 +1,20 @@
 use crate::{
     components::{Component, Kanban, MoveDialog, NewTaskDialog, Preview},
     db::SqliteDb,
-    event::{AppEvent, Event, EventHandler},
-    handler::AddTaskModalHandler,
+    event::{
+        AddTaskEvent, AppEvent, Event, EventHandler, KanbanScreenEvent, MainScreenEvent,
+        MoveTaskEvent,
+    },
+    event_mux::handle_events,
+    handler::{
+        AddTaskModalHandler, column_pane_handler::ColumnHandler,
+        main_screen_handler::MainScreenHandler, move_task_handler::MoveTaskHandler,
+    },
     state::app_state::AppState,
     theme::create_base_block,
 };
 use ratatui::{
     DefaultTerminal,
-    crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout, Rect},
     widgets::Padding,
 };
@@ -99,149 +105,39 @@ impl App {
                 crossterm::event::Event::Key(key_event)
                     if key_event.kind == crossterm::event::KeyEventKind::Press =>
                 {
-                    self.handle_key_event(key_event)
+                    handle_events(&mut self.events, key_event, self.state.active_pane.clone());
                 }
                 _ => {}
             },
             Event::App(app_event) => match app_event {
+                AppEvent::KanbanScreenEvent(event) => self.handle_kanban_screen_event(event),
+                AppEvent::AddTaskEvent(event) => self.handle_add_task_event(event),
+                AppEvent::MoveTaskEvent(move_task_event) => {
+                    self.handle_move_task_event(move_task_event)
+                }
                 AppEvent::Quit => self.quit(),
-                AppEvent::SwitchContext => self.cycle_focus(),
-                AppEvent::FocusIn => self.state.focus_kanban(),
-                AppEvent::FocusOut => self.state.remove_kanban_focus(),
-                AppEvent::MoveTask => self.open_move_dialog(),
-                AppEvent::NewTask => self.open_new_task_dialog(),
-                AppEvent::ConfirmMove => self.handle_move(),
-                AppEvent::KeyInput(ch) => self.handle_char_input(ch),
-                AppEvent::Save => self.handle_save(),
-                AppEvent::PopChar => self.handle_pop_char(),
-                AppEvent::Delete => self.handle_delete(),
+                AppEvent::MainScreen(main_screen_event) => {
+                    self.handle_main_screen_event(main_screen_event)
+                }
             },
         }
         Ok(())
     }
 
-    fn handle_save(&mut self) {
-        if self.state.is_focused_add_task() {
-            self.state.save_new_task();
-            self.events.send(AppEvent::FocusOut);
-            ()
-        }
+    fn handle_main_screen_event(&mut self, event: MainScreenEvent) {
+        MainScreenHandler::handle_events(&mut self.state, event);
     }
 
-    fn handle_delete(&mut self) {
-        if !self.state.is_focused_kanban() {
-            return;
-        }
-
-        self.state.remove_selected_task();
+    fn handle_kanban_screen_event(&mut self, event: KanbanScreenEvent) {
+        ColumnHandler::handle_events(&mut self.state, event);
     }
 
-    fn handle_char_input(&mut self, ch: char) {
-        if !self.state.is_focused_add_task() {
-            return;
-        }
-
-        if let Some(field) = self.state.get_add_task_focused_field() {
-            match ch {
-                'l' => AddTaskModalHandler::next_option(&mut self.state, field),
-                'h' => AddTaskModalHandler::prev_option(&mut self.state, field),
-                _ => (),
-            }
-        }
-
-        AddTaskModalHandler::handle_char_input(&mut self.state, ch)
+    fn handle_move_task_event(&mut self, event: MoveTaskEvent) {
+        MoveTaskHandler::handle_events(&mut self.state, event);
     }
 
-    fn handle_pop_char(&mut self) {
-        if self.state.is_focused_add_task() {
-            AddTaskModalHandler::handle_char_pop(&mut self.state)
-        }
-    }
-
-    // Moves focus across different panes.
-    fn cycle_focus(&mut self) {
-        if self.state.is_moving_task() {
-            self.state.cycle_task_status_focus();
-            return;
-        }
-        if self.state.is_focused_add_task() {
-            self.state.cycle_add_task_field();
-            return;
-        }
-        if !self.state.is_focused_kanban() {
-            self.state.cycle_focus()
-        } else {
-            self.state.cycle_kanban_focus()
-        }
-    }
-
-    fn open_move_dialog(&mut self) {
-        if !self.state.is_focused_kanban() {
-            return;
-        }
-        self.state.open_move_task_modal();
-    }
-
-    fn open_new_task_dialog(&mut self) {
-        if self.state.is_focused_add_task() {
-            return;
-        }
-        self.state.focus_add_task_modal();
-    }
-
-    /// Handles the key events and updates the state of [`App`].
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        if self.state.is_focused_add_task() {
-            self.handle_add_task_events(key_event);
-            return;
-        }
-
-        self.handle_base_key_events(key_event);
-    }
-
-    pub fn handle_add_task_events(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char(ch) => self.events.send(AppEvent::KeyInput(ch)),
-            KeyCode::Enter => self.events.send(AppEvent::Save),
-            KeyCode::Backspace => self.events.send(AppEvent::PopChar),
-            KeyCode::Esc => self.events.send(AppEvent::FocusOut),
-            KeyCode::Tab => self.events.send(AppEvent::SwitchContext),
-            _ => {}
-        }
-    }
-
-    pub fn handle_base_key_events(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('q') => self.events.send(AppEvent::Quit),
-            KeyCode::Char('m') => self.events.send(AppEvent::MoveTask),
-            KeyCode::Char('n') => self.events.send(AppEvent::NewTask),
-            KeyCode::Char('d') => self.events.send(AppEvent::Delete),
-            KeyCode::Tab => self.events.send(AppEvent::SwitchContext),
-            KeyCode::Enter => self.handle_enter(),
-            KeyCode::Esc => self.events.send(AppEvent::FocusOut),
-            KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
-                self.events.send(AppEvent::Quit)
-            }
-            _ => {}
-        }
-    }
-
-    fn handle_enter(&mut self) {
-        if self.state.is_moving_task() {
-            self.events.send(AppEvent::ConfirmMove);
-            return;
-        }
-
-        self.events.send(AppEvent::FocusIn);
-    }
-
-    fn handle_move(&mut self) {
-        if let Some(target_status) = self.state.modal_focus
-            && let Some(task) = self.state.get_focused_task()
-        {
-            self.state.move_task(task, target_status);
-            self.state.remove_kanban_focus();
-        }
+    fn handle_add_task_event(&mut self, event: AddTaskEvent) {
+        AddTaskModalHandler::handle_events(&mut self.state, event);
     }
 
     fn get_layout(&self) -> Layout {

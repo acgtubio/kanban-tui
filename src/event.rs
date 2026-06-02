@@ -33,17 +33,51 @@ pub enum Event {
 /// You can extend this enum with your own custom events.
 #[derive(Clone, Debug)]
 pub enum AppEvent {
-    SwitchContext,
-    FocusIn,
-    FocusOut,
+    AddTaskEvent(AddTaskEvent),
+    MoveTaskEvent(MoveTaskEvent),
+    KanbanScreenEvent(KanbanScreenEvent),
+    MainScreen(MainScreenEvent),
     Quit,
-    MoveTask,
-    NewTask,
+}
+
+#[derive(Clone, Debug)]
+pub enum MainScreenEvent {
+    Navigate(NavigationEvent),
+}
+
+#[derive(Clone, Debug)]
+pub enum KanbanScreenEvent {
+    Navigate(NavigationEvent),
     Delete,
-    ConfirmMove,
-    KeyInput(char),
+}
+
+#[derive(Clone, Debug)]
+pub enum AddTaskEvent {
     Save,
+    Input(InputEvent),
+    Navigate(NavigationEvent),
+}
+
+#[derive(Clone, Debug)]
+pub enum MoveTaskEvent {
+    ConfirmMove,
+    Navigate(NavigationEvent),
+}
+
+#[derive(Clone, Debug)]
+pub enum InputEvent {
+    Key(char),
     PopChar,
+    PrevChar,
+    NextChar,
+}
+
+#[derive(Clone, Debug)]
+pub enum NavigationEvent {
+    FocusOut,
+    FocusIn,
+    Prev,
+    Next,
 }
 
 /// Terminal event handler.

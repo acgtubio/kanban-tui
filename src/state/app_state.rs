@@ -12,6 +12,8 @@ use crate::{
 pub enum Pane {
     Preview,
     MoveTaskModal,
+    AddTask,
+    Column,
     Kanban(TaskStatus),
 }
 
@@ -79,8 +81,19 @@ impl AppState {
     }
 
     pub fn cycle_kanban_focus(&mut self) {
-        let Some(status) = self.get_status_by_pane() else {
-            return;
+        let (status, index) = {
+            let Some(focus) = &mut self.kanban_focus else {
+                return;
+            };
+
+            let status = focus.column;
+
+            let Some(index) = focus.task_idx else {
+                focus.task_idx = Some(0);
+                return;
+            };
+
+            (status, index)
         };
 
         let Some(max_len) = self.get_task_size_by_status(&status) else {
@@ -91,12 +104,7 @@ impl AppState {
             return;
         };
 
-        let Some(index) = focus.task_idx else {
-            focus.task_idx = Some(0);
-            return;
-        };
-
-        if index < max_len - 1 {
+        if index < max_len.clone() - 1 {
             focus.task_idx = Some(index + 1);
         } else {
             focus.task_idx = Some(0);
@@ -121,7 +129,7 @@ impl AppState {
                 TaskStatus::InProgress => Pane::Kanban(TaskStatus::Completed),
                 TaskStatus::Completed => Pane::Kanban(TaskStatus::Pending),
             },
-            Pane::MoveTaskModal => self.active_pane.clone(),
+            _ => self.active_pane.clone(),
         }
     }
 
@@ -134,6 +142,7 @@ impl AppState {
             return;
         }
 
+        self.active_pane = Pane::AddTask;
         self.add_task_focus = Some(AddTaskModalState {
             current_field: TaskField::Name,
             field_values: TaskFieldValues::default(),
@@ -242,6 +251,7 @@ impl AppState {
             return;
         }
 
+        self.active_pane = Pane::Column;
         self.kanban_focus = Some(KanbanFocus {
             column: status,
             task_idx: Some(0),
@@ -249,23 +259,28 @@ impl AppState {
     }
 
     pub fn remove_kanban_focus(&mut self) {
-        // TODO: Find a way to retain the previous task status.
-        if self.is_moving_task() {
-            self.modal_focus = None;
-
-            self.active_pane = Pane::Kanban(TaskStatus::Pending);
-            return;
-        }
-        if self.is_focused_add_task() {
-            self.add_task_focus = None;
-
-            self.active_pane = Pane::Kanban(TaskStatus::Pending);
-        }
-
         self.kanban_focus = None;
+        self.active_pane = Pane::Kanban(TaskStatus::Pending);
     }
 
-    fn get_task_size_by_status(&mut self, status: &TaskStatus) -> Option<usize> {
+    pub fn remove_move_task_focus(&mut self) {
+        if !self.is_moving_task() {
+            return;
+        }
+        self.modal_focus = None;
+        self.active_pane = Pane::Column;
+    }
+
+    pub fn remove_add_task_focus(&mut self) {
+        if !self.is_focused_add_task() {
+            return;
+        }
+
+        self.add_task_focus = None;
+        self.active_pane = Pane::Kanban(TaskStatus::Pending);
+    }
+
+    fn get_task_size_by_status(&self, status: &TaskStatus) -> Option<usize> {
         self.tasks.get(&status).map(|t| t.len())
     }
 
