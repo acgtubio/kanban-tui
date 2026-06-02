@@ -66,7 +66,7 @@ impl Kanban {
             .split(inner);
 
         for (i, task) in tasks.iter().enumerate() {
-            TaskCard::render_card(frame, layout[i], state, task, i);
+            TaskCard::render_card(frame, layout[i], state, task, i as isize);
         }
 
         frame.render_widget(block, area);

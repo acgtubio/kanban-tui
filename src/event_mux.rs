@@ -32,6 +32,12 @@ pub fn handle_move_task_event(event_handler: &mut EventHandler, key_event: KeyEv
         KeyCode::Tab => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
             NavigationEvent::Next,
         ))),
+        KeyCode::Char('j') => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
+            NavigationEvent::Next,
+        ))),
+        KeyCode::Char('k') => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
+            NavigationEvent::Prev,
+        ))),
         KeyCode::Esc => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
             NavigationEvent::FocusOut,
         ))),
@@ -69,6 +75,12 @@ pub fn handle_column_event(event_handler: &mut EventHandler, key_event: KeyEvent
         }
         KeyCode::Tab => event_handler.send(AppEvent::KanbanScreenEvent(
             KanbanScreenEvent::Navigate(NavigationEvent::Next),
+        )),
+        KeyCode::Char('j') => event_handler.send(AppEvent::KanbanScreenEvent(
+            KanbanScreenEvent::Navigate(NavigationEvent::Next),
+        )),
+        KeyCode::Char('k') => event_handler.send(AppEvent::KanbanScreenEvent(
+            KanbanScreenEvent::Navigate(NavigationEvent::Prev),
         )),
         _ => {}
     }

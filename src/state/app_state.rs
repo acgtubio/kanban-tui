@@ -20,7 +20,7 @@ pub enum Pane {
 #[derive(Debug, PartialEq, Clone)]
 pub struct KanbanFocus {
     pub column: TaskStatus,
-    pub task_idx: Option<usize>,
+    pub task_idx: Option<isize>,
 }
 
 pub struct AppState {
@@ -67,7 +67,7 @@ impl AppState {
 
     pub fn cycle_focus(&mut self) {
         match self.kanban_focus {
-            Some(_) => self.cycle_kanban_focus(),
+            Some(_) => self.cycle_kanban_focus(1),
             None => self.cycle_pane(),
         };
     }
@@ -80,7 +80,11 @@ impl AppState {
         self.active_pane == Pane::MoveTaskModal
     }
 
-    pub fn cycle_kanban_focus(&mut self) {
+    pub fn update_kanban_selection(&mut self, increment: isize) {
+        self.cycle_kanban_focus(increment);
+    }
+
+    fn cycle_kanban_focus(&mut self, increment: isize) {
         let (status, index) = {
             let Some(focus) = &mut self.kanban_focus else {
                 return;
@@ -104,8 +108,8 @@ impl AppState {
             return;
         };
 
-        if index < max_len.clone() - 1 {
-            focus.task_idx = Some(index + 1);
+        if index < max_len.clone() as isize - 1 && index - 1 >= 0 {
+            focus.task_idx = Some(index as isize + increment);
         } else {
             focus.task_idx = Some(0);
         }
@@ -117,6 +121,16 @@ impl AppState {
                 TaskStatus::Pending => Some(TaskStatus::InProgress),
                 TaskStatus::InProgress => Some(TaskStatus::Completed),
                 TaskStatus::Completed => Some(TaskStatus::Pending),
+            };
+        }
+    }
+
+    pub fn prev_task_status_focus(&mut self) {
+        if let Some(modal_focus) = self.modal_focus {
+            self.modal_focus = match modal_focus {
+                TaskStatus::Pending => Some(TaskStatus::Completed),
+                TaskStatus::InProgress => Some(TaskStatus::Pending),
+                TaskStatus::Completed => Some(TaskStatus::InProgress),
             };
         }
     }
@@ -349,7 +363,7 @@ impl AppState {
 
         let tasks = self.tasks.get(&focus.column)?;
 
-        let task = tasks.get(selected_index)?;
+        let task = tasks.get(selected_index as usize)?;
 
         Some(task.clone())
     }
@@ -469,7 +483,7 @@ mod tests {
         app.cycle_focus();
 
         app.focus_kanban();
-        app.cycle_kanban_focus();
+        app.cycle_kanban_focus(1);
 
         assert_eq!(
             Some(KanbanFocus {
@@ -507,8 +521,8 @@ mod tests {
         app.cycle_focus();
 
         app.focus_kanban();
-        app.cycle_kanban_focus();
-        app.cycle_kanban_focus();
+        app.cycle_kanban_focus(1);
+        app.cycle_kanban_focus(1);
 
         assert_eq!(
             Some(KanbanFocus {
@@ -566,8 +580,8 @@ mod tests {
 
         app.focus_kanban();
 
-        app.cycle_kanban_focus();
-        app.cycle_kanban_focus();
+        app.cycle_kanban_focus(1);
+        app.cycle_kanban_focus(1);
 
         assert_eq!(
             Some(KanbanFocus {
@@ -625,7 +639,7 @@ mod tests {
 
         app.focus_kanban();
 
-        app.cycle_kanban_focus();
+        app.cycle_kanban_focus(1);
 
         assert_eq!(
             Some(KanbanFocus {
@@ -683,9 +697,9 @@ mod tests {
 
         app.focus_kanban();
 
-        app.cycle_kanban_focus();
-        app.cycle_kanban_focus();
-        app.cycle_kanban_focus();
+        app.cycle_kanban_focus(1);
+        app.cycle_kanban_focus(1);
+        app.cycle_kanban_focus(1);
 
         assert_eq!(
             Some(KanbanFocus {

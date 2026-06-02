@@ -22,8 +22,8 @@ impl ColumnHandler {
         match navigation_event {
             NavigationEvent::FocusIn => state.focus_kanban(),
             NavigationEvent::FocusOut => state.remove_kanban_focus(),
-            NavigationEvent::Next => state.cycle_kanban_focus(),
-            NavigationEvent::Prev => todo!(),
+            NavigationEvent::Next => state.update_kanban_selection(1),
+            NavigationEvent::Prev => state.update_kanban_selection(-1),
         }
     }
 }

@@ -29,7 +29,7 @@ impl MoveTaskHandler {
             NavigationEvent::FocusIn => state.open_move_task_modal(),
             NavigationEvent::FocusOut => state.remove_move_task_focus(),
             NavigationEvent::Next => state.cycle_task_status_focus(),
-            _ => (),
+            NavigationEvent::Prev => state.prev_task_status_focus(),
         }
     }
 }
