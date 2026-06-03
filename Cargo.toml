@@ -1,6 +1,6 @@
 [package]
-name = "eventdriven"
-version = "0.1.0"
+name = "editui"
+version = "1.0.0"
 description = "lowl"
 authors = ["eyd <acgtubio@gmail.com>"]
 license = "MIT"
