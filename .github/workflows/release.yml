@@ -14,11 +14,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+            label: linux-x86_64
             ext: tar.gz
 
           - os: macos-latest
-            target: darwin-aarch64
+            target: aarch64-apple-darwin
+            label: darwin-aarch64
             ext: tar.gz
 
     runs-on: ${{ matrix.os }}
@@ -45,11 +47,11 @@ jobs:
       - name: Package (Linux/macOS)
         run: |
           cd dist
-          tar -czf ../editui-${{ matrix.target }}.tar.gz *
+          tar -czf ../editui-${{ matrix.label }}.tar.gz *
 
       - name: Generate checksum (Linux/macOS)
         run: |
-          sha256sum editui-${{ matrix.target }}.tar.gz > editui-${{ matrix.target }}.sha256
+          sha256sum editui-${{ matrix.label }}.tar.gz > editui-${{ matrix.label }}.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
