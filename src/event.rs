@@ -35,6 +35,7 @@ pub enum Event {
 pub enum AppEvent {
     AddTaskEvent(AddTaskEvent),
     MoveTaskEvent(MoveTaskEvent),
+    DeleteConfirmEvent(DeleteConfirmEvent),
     KanbanScreenEvent(KanbanScreenEvent),
     MainScreen(MainScreenEvent),
     Quit,
@@ -48,7 +49,6 @@ pub enum MainScreenEvent {
 #[derive(Clone, Debug)]
 pub enum KanbanScreenEvent {
     Navigate(NavigationEvent),
-    Delete,
 }
 
 #[derive(Clone, Debug)]
@@ -62,6 +62,12 @@ pub enum AddTaskEvent {
 #[derive(Clone, Debug)]
 pub enum MoveTaskEvent {
     ConfirmMove,
+    Navigate(NavigationEvent),
+}
+
+#[derive(Clone, Debug)]
+pub enum DeleteConfirmEvent {
+    ConfirmDelete,
     Navigate(NavigationEvent),
 }
 

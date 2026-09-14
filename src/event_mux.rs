@@ -2,8 +2,8 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     event::{
-        AddTaskEvent, AppEvent, EventHandler, InputEvent, KanbanScreenEvent, MainScreenEvent,
-        MoveTaskEvent, NavigationEvent,
+        AddTaskEvent, AppEvent, DeleteConfirmEvent, EventHandler, InputEvent, KanbanScreenEvent,
+        MainScreenEvent, MoveTaskEvent, NavigationEvent,
     },
     state::app_state::Pane,
 };
@@ -46,6 +46,27 @@ pub fn handle_move_task_event(event_handler: &mut EventHandler, key_event: KeyEv
     }
 }
 
+pub fn handle_delete_confirm_event(event_handler: &mut EventHandler, key_event: KeyEvent) {
+    match key_event.code {
+        KeyCode::Tab => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::Navigate(NavigationEvent::Next),
+        )),
+        KeyCode::Char('j') => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::Navigate(NavigationEvent::Next),
+        )),
+        KeyCode::Char('k') => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::Navigate(NavigationEvent::Prev),
+        )),
+        KeyCode::Esc => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::Navigate(NavigationEvent::FocusOut),
+        )),
+        KeyCode::Enter => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::ConfirmDelete,
+        )),
+        _ => {}
+    }
+}
+
 pub fn handle_kanban_event(event_handler: &mut EventHandler, key_event: KeyEvent) {
     match key_event.code {
         KeyCode::Char('q') => event_handler.send(AppEvent::Quit),
@@ -70,9 +91,9 @@ pub fn handle_column_event(event_handler: &mut EventHandler, key_event: KeyEvent
         KeyCode::Char('m') => event_handler.send(AppEvent::MoveTaskEvent(MoveTaskEvent::Navigate(
             NavigationEvent::FocusIn,
         ))),
-        KeyCode::Char('d') => {
-            event_handler.send(AppEvent::KanbanScreenEvent(KanbanScreenEvent::Delete))
-        }
+        KeyCode::Char('d') => event_handler.send(AppEvent::DeleteConfirmEvent(
+            DeleteConfirmEvent::Navigate(NavigationEvent::FocusIn),
+        )),
         KeyCode::Char('e') => {
             event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::EditFocusIn))
         }
@@ -93,6 +114,7 @@ pub fn handle_events(event_handler: &mut EventHandler, key_event: KeyEvent, curr
     match current_pane {
         Pane::Preview => todo!(),
         Pane::MoveTaskModal => handle_move_task_event(event_handler, key_event),
+        Pane::DeleteConfirmModal => handle_delete_confirm_event(event_handler, key_event),
         Pane::AddTask => handle_add_task_events(event_handler, key_event),
         Pane::Kanban(_) => handle_kanban_event(event_handler, key_event),
         Pane::Column => handle_column_event(event_handler, key_event),

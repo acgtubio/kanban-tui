@@ -11,10 +11,6 @@ impl ColumnHandler {
             KanbanScreenEvent::Navigate(navigation_event) => {
                 ColumnHandler::handle_navigation(state, navigation_event)
             }
-            KanbanScreenEvent::Delete => {
-                state.remove_selected_task();
-                ()
-            }
         }
     }
 

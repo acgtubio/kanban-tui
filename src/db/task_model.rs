@@ -6,6 +6,7 @@ pub struct TaskModel {
     pub description: String,
     pub status: String,
     pub priority: String,
+    pub archived: bool,
 }
 
 impl From<Task> for TaskModel {
@@ -16,6 +17,7 @@ impl From<Task> for TaskModel {
             description: value.description,
             status: value.status.to_string(),
             priority: value.priority.to_string(),
+            archived: value.archived,
         }
     }
 }

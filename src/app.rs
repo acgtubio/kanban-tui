@@ -1,14 +1,15 @@
 use crate::{
-    components::{Component, Kanban, MoveDialog, NewTaskDialog, Preview},
+    components::{Component, DeleteConfirmDialog, Kanban, MoveDialog, NewTaskDialog, Preview},
     db::SqliteDb,
     event::{
-        AddTaskEvent, AppEvent, Event, EventHandler, KanbanScreenEvent, MainScreenEvent,
-        MoveTaskEvent,
+        AddTaskEvent, AppEvent, DeleteConfirmEvent, Event, EventHandler, KanbanScreenEvent,
+        MainScreenEvent, MoveTaskEvent,
     },
     event_mux::handle_events,
     handler::{
         AddTaskModalHandler, column_pane_handler::ColumnHandler,
-        main_screen_handler::MainScreenHandler, move_task_handler::MoveTaskHandler,
+        delete_confirm_handler::DeleteConfirmHandler, main_screen_handler::MainScreenHandler,
+        move_task_handler::MoveTaskHandler,
     },
     state::app_state::AppState,
     theme::create_base_block,
@@ -75,6 +76,18 @@ impl App {
 
                     NewTaskDialog::render_new_task_dialog(frame, modal_area, &mut self.state);
                 }
+
+                // Delete confirmation modal
+                if self.state.is_confirming_delete() {
+                    let area = frame.area();
+                    let modal_area = App::get_modal_area(area, 50, 7);
+
+                    DeleteConfirmDialog::render_delete_confirm_dialog(
+                        frame,
+                        modal_area,
+                        &self.state,
+                    );
+                }
             })?;
             self.handle_events()?;
         }
@@ -115,6 +128,7 @@ impl App {
                 AppEvent::MoveTaskEvent(move_task_event) => {
                     self.handle_move_task_event(move_task_event)
                 }
+                AppEvent::DeleteConfirmEvent(event) => self.handle_delete_confirm_event(event),
                 AppEvent::Quit => self.quit(),
                 AppEvent::MainScreen(main_screen_event) => {
                     self.handle_main_screen_event(main_screen_event)
@@ -134,6 +148,10 @@ impl App {
 
     fn handle_move_task_event(&mut self, event: MoveTaskEvent) {
         MoveTaskHandler::handle_events(&mut self.state, event);
+    }
+
+    fn handle_delete_confirm_event(&mut self, event: DeleteConfirmEvent) {
+        DeleteConfirmHandler::handle_events(&mut self.state, event);
     }
 
     fn handle_add_task_event(&mut self, event: AddTaskEvent) {

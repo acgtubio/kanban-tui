@@ -157,6 +157,7 @@ pub struct Task {
     pub description: String,
     pub status: TaskStatus,
     pub priority: TaskPriority,
+    pub archived: bool,
 }
 
 impl PartialEq for Task {
@@ -184,6 +185,7 @@ impl Task {
             description: description,
             status: TaskStatus::Pending,
             priority: prio,
+            archived: false,
         }
     }
 
@@ -199,6 +201,7 @@ impl Task {
             description: description,
             status: status,
             priority: prio,
+            archived: false,
         }
     }
 
@@ -209,6 +212,7 @@ impl Task {
             description: task_model.description.clone(),
             status: TaskStatus::from_string(task_model.status.as_str())?,
             priority: TaskPriority::from_string(task_model.priority.as_str())?,
+            archived: task_model.archived,
         })
     }
 

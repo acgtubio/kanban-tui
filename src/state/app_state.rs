@@ -12,6 +12,7 @@ use crate::{
 pub enum Pane {
     Preview,
     MoveTaskModal,
+    DeleteConfirmModal,
     AddTask,
     Column,
     Kanban(TaskStatus),
@@ -29,6 +30,7 @@ pub struct AppState {
     pub kanban_focus: Option<KanbanFocus>,
     pub modal_focus: Option<TaskStatus>,
     pub add_task_focus: Option<AddTaskModalState>,
+    pub delete_confirm_focus: Option<bool>,
     db: SqliteDb,
 }
 
@@ -40,6 +42,7 @@ impl AppState {
             kanban_focus: None,
             modal_focus: None,
             add_task_focus: None,
+            delete_confirm_focus: None,
             db: db,
         };
 
@@ -78,6 +81,36 @@ impl AppState {
 
     pub fn is_moving_task(&self) -> bool {
         self.active_pane == Pane::MoveTaskModal
+    }
+
+    pub fn is_confirming_delete(&self) -> bool {
+        self.active_pane == Pane::DeleteConfirmModal
+    }
+
+    pub fn open_delete_confirm_modal(&mut self) {
+        if self.get_focused_task().is_none() {
+            return;
+        }
+        self.active_pane = Pane::DeleteConfirmModal;
+        self.delete_confirm_focus = Some(false);
+    }
+
+    pub fn close_delete_confirm_modal(&mut self) {
+        self.delete_confirm_focus = None;
+        self.active_pane = Pane::Column;
+    }
+
+    pub fn toggle_delete_confirm_focus(&mut self) {
+        if let Some(focus) = self.delete_confirm_focus {
+            self.delete_confirm_focus = Some(!focus);
+        }
+    }
+
+    pub fn confirm_delete_focused_task(&mut self) {
+        if self.delete_confirm_focus == Some(true) {
+            self.archive_selected_task();
+        }
+        self.close_delete_confirm_modal();
     }
 
     pub fn update_kanban_selection(&mut self, increment: isize) {
@@ -365,6 +398,7 @@ impl AppState {
                 description: field_values.description,
                 status: existing.status,
                 priority: field_values.task_priority,
+                archived: existing.archived,
             };
             self.move_task(source_task, field_values.task_status);
         } else {
@@ -374,6 +408,7 @@ impl AppState {
                 description: field_values.description,
                 status: existing.status,
                 priority: field_values.task_priority,
+                archived: existing.archived,
             };
             if let Some(list) = self.tasks.get_mut(&existing.status)
                 && let Some(t) = list.iter_mut().find(|t| t.id == updated.id)
@@ -402,6 +437,7 @@ impl AppState {
             description: task.description,
             status: target_status,
             priority: task.priority,
+            archived: task.archived,
         };
 
         self.update_task_on_db(new_task.clone());
@@ -436,11 +472,11 @@ impl AppState {
     }
 
     // TODO: Handle error
-    pub fn remove_selected_task(&mut self) -> Option<()> {
+    pub fn archive_selected_task(&mut self) -> Option<()> {
         let task = self.get_focused_task()?;
         let target_task_list = self.tasks.get_mut(&task.status)?;
 
-        let _ = self.db.delete_task(task.id.to_string());
+        let _ = self.db.archive_task(task.id.to_string());
 
         target_task_list.retain(|t| t.id != task.id);
 
