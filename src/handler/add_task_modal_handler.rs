@@ -15,6 +15,7 @@ impl AddTaskModalHandler {
             AddTaskEvent::Navigate(navigation_event) => {
                 AddTaskModalHandler::handle_nav_event(state, navigation_event)
             }
+            AddTaskEvent::EditFocusIn => state.focus_edit_task_modal(),
         }
     }
 
@@ -90,7 +91,7 @@ impl AddTaskModalHandler {
 
     fn handle_save(state: &mut AppState) {
         if state.is_focused_add_task() {
-            state.save_new_task();
+            state.save_task_form();
             state.remove_add_task_focus();
             ()
         }

@@ -15,7 +15,19 @@ pub struct NewTaskDialog {}
 
 impl NewTaskDialog {
     pub fn render_new_task_dialog(frame: &mut Frame, area: Rect, state: &AppState) {
-        let base_block = create_bordered_block().border_style(Style::new().yellow());
+        let title = if state
+            .add_task_focus
+            .as_ref()
+            .and_then(|s| s.editing_task_id)
+            .is_some()
+        {
+            " Edit Task "
+        } else {
+            " Add Task "
+        };
+        let base_block = create_bordered_block()
+            .border_style(Style::new().yellow())
+            .title(title);
 
         let base_layout = NewTaskDialog::get_dialog_layout().split(area);
 

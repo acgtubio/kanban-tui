@@ -1,9 +1,12 @@
+use uuid::Uuid;
+
 use crate::state::{task_field::TaskField, task_field_value::TaskFieldValues};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AddTaskModalState {
     pub current_field: TaskField,
     pub field_values: TaskFieldValues,
+    pub editing_task_id: Option<Uuid>,
 }
 
 impl AddTaskModalState {

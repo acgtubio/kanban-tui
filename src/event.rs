@@ -56,6 +56,7 @@ pub enum AddTaskEvent {
     Save,
     Input(InputEvent),
     Navigate(NavigationEvent),
+    EditFocusIn,
 }
 
 #[derive(Clone, Debug)]

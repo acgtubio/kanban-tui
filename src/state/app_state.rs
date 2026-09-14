@@ -160,6 +160,24 @@ impl AppState {
         self.add_task_focus = Some(AddTaskModalState {
             current_field: TaskField::Name,
             field_values: TaskFieldValues::default(),
+            editing_task_id: None,
+        });
+    }
+
+    pub fn focus_edit_task_modal(&mut self) {
+        if self.is_focused_add_task() {
+            return;
+        }
+
+        let Some(task) = self.get_focused_task() else {
+            return;
+        };
+
+        self.active_pane = Pane::AddTask;
+        self.add_task_focus = Some(AddTaskModalState {
+            current_field: TaskField::Name,
+            field_values: TaskFieldValues::from_task(&task),
+            editing_task_id: Some(task.id),
         });
     }
 
@@ -290,8 +308,17 @@ impl AppState {
             return;
         }
 
+        let was_editing = self
+            .add_task_focus
+            .as_ref()
+            .is_some_and(|s| s.editing_task_id.is_some());
+
         self.add_task_focus = None;
-        self.active_pane = Pane::Kanban(TaskStatus::Pending);
+        self.active_pane = if was_editing {
+            Pane::Column
+        } else {
+            Pane::Kanban(TaskStatus::Pending)
+        };
     }
 
     fn get_task_size_by_status(&self, status: &TaskStatus) -> Option<usize> {
@@ -305,16 +332,56 @@ impl AppState {
         }
     }
 
-    pub fn save_new_task(&mut self) {
-        let Some(add_task_state) = &mut self.add_task_focus else {
+    pub fn save_task_form(&mut self) {
+        let Some(form_state) = &self.add_task_focus else {
             return;
         };
+        let editing_task_id = form_state.editing_task_id;
+        let field_values = form_state.field_values.clone();
 
-        let task = Task::from(add_task_state.field_values.clone());
+        match editing_task_id {
+            Some(_) => self.save_edited_task(field_values),
+            None => self.save_created_task(field_values),
+        }
+    }
+
+    fn save_created_task(&mut self, field_values: TaskFieldValues) {
+        let task = Task::from(field_values);
         let task_model = TaskModel::from(task.clone());
         // TODO: Handle errors.
         let _ = self.db.add_task(task_model);
         self.add_task(task);
+    }
+
+    fn save_edited_task(&mut self, field_values: TaskFieldValues) {
+        let Some(existing) = self.get_focused_task() else {
+            return;
+        };
+
+        if field_values.task_status != existing.status {
+            let source_task = Task {
+                id: existing.id,
+                name: field_values.name,
+                description: field_values.description,
+                status: existing.status,
+                priority: field_values.task_priority,
+            };
+            self.move_task(source_task, field_values.task_status);
+        } else {
+            let updated = Task {
+                id: existing.id,
+                name: field_values.name,
+                description: field_values.description,
+                status: existing.status,
+                priority: field_values.task_priority,
+            };
+            if let Some(list) = self.tasks.get_mut(&existing.status)
+                && let Some(t) = list.iter_mut().find(|t| t.id == updated.id)
+            {
+                *t = updated.clone();
+            }
+            self.update_task_on_db(updated);
+        }
     }
 
     pub fn add_task(&mut self, task: Task) {
@@ -769,6 +836,7 @@ mod tests {
         let expected_value = AddTaskModalState {
             current_field: TaskField::Description,
             field_values: TaskFieldValues::default(),
+            editing_task_id: None,
         };
 
         assert_eq!(Some(expected_value), app.add_task_focus);
@@ -787,6 +855,7 @@ mod tests {
         let expected_value = AddTaskModalState {
             current_field: TaskField::Name,
             field_values: default_field_values,
+            editing_task_id: None,
         };
 
         app.add_to_name('a');
@@ -808,6 +877,7 @@ mod tests {
         let expected_value = AddTaskModalState {
             current_field: TaskField::Name,
             field_values: default_field_values,
+            editing_task_id: None,
         };
 
         app.add_to_name('a');
@@ -830,6 +900,7 @@ mod tests {
         let expected_value = AddTaskModalState {
             current_field: TaskField::Name,
             field_values: default_field_values,
+            editing_task_id: None,
         };
 
         app.add_to_name('a');
@@ -853,6 +924,7 @@ mod tests {
         let expected_value = AddTaskModalState {
             current_field: TaskField::Name,
             field_values: default_field_values,
+            editing_task_id: None,
         };
 
         app.add_to_name('a');

@@ -1,4 +1,4 @@
-use crate::components::{TaskPriority, TaskStatus};
+use crate::components::{Task, TaskPriority, TaskStatus};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TaskFieldValues {
@@ -9,6 +9,15 @@ pub struct TaskFieldValues {
 }
 
 impl TaskFieldValues {
+    pub fn from_task(task: &Task) -> Self {
+        Self {
+            name: task.name.clone(),
+            description: task.description.clone(),
+            task_status: task.status,
+            task_priority: task.priority,
+        }
+    }
+
     pub fn add_to_name(&mut self, c: char) {
         self.name.push(c);
     }

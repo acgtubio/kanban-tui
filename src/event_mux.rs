@@ -73,6 +73,9 @@ pub fn handle_column_event(event_handler: &mut EventHandler, key_event: KeyEvent
         KeyCode::Char('d') => {
             event_handler.send(AppEvent::KanbanScreenEvent(KanbanScreenEvent::Delete))
         }
+        KeyCode::Char('e') => {
+            event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::EditFocusIn))
+        }
         KeyCode::Tab => event_handler.send(AppEvent::KanbanScreenEvent(
             KanbanScreenEvent::Navigate(NavigationEvent::Next),
         )),
