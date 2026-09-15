@@ -60,9 +60,13 @@ impl Kanban {
             .border_type(BorderType::Rounded);
 
         let inner = block.inner(area);
+        let constraints: Vec<Constraint> = tasks
+            .iter()
+            .map(|task| Constraint::Length(TaskCard::estimate_wrapped_lines(&task.name, inner.width)))
+            .collect();
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(1); tasks.len()])
+            .constraints(constraints)
             .split(inner);
 
         for (i, task) in tasks.iter().enumerate() {
@@ -81,6 +85,8 @@ impl Component for Kanban {
         }
 
         let inner_area = block.inner(area);
+        frame.render_widget(block, area);
+
         if let Some(focus) = &state.kanban_focus {
             let layout = Layout::default()
                 .direction(Direction::Vertical)

@@ -20,6 +20,11 @@ use ratatui::{
     widgets::Padding,
 };
 
+/// Below this terminal width, the preview pane is dropped so the Kanban columns
+/// get the full screen width instead of being squeezed to 60% of an already-narrow
+/// terminal (e.g. a 13" laptop terminal window).
+const NARROW_SCREEN_WIDTH: u16 = 100;
+
 pub struct App {
     pub running: bool,
     pub events: EventHandler,
@@ -53,13 +58,19 @@ impl App {
     pub fn render(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
             terminal.draw(|frame| {
-                let chunks = self.get_layout().split(frame.area());
+                let show_preview = frame.area().width >= NARROW_SCREEN_WIDTH;
+                let chunks = self.get_layout(show_preview).split(frame.area());
 
                 let modal_block = create_base_block().padding(Padding::uniform(5));
                 frame.render_widget(modal_block, frame.area());
 
                 // Kanban
                 self.kanban.draw(frame, chunks[0], &mut self.state);
+
+                // Preview
+                if show_preview {
+                    self.preview.draw(frame, chunks[1], &mut self.state);
+                }
 
                 // Move task modal
                 if self.state.is_moving_task() {
@@ -95,6 +106,9 @@ impl App {
     }
 
     fn get_modal_area(area: Rect, width: u16, height: u16) -> Rect {
+        let width = width.min(area.width);
+        let height = height.min(area.height);
+
         let mid_x = (area.x + area.width) / 2;
         let mid_y = (area.y + area.height) / 2;
 
@@ -158,10 +172,16 @@ impl App {
         AddTaskModalHandler::handle_events(&mut self.state, event);
     }
 
-    fn get_layout(&self) -> Layout {
+    fn get_layout(&self, show_preview: bool) -> Layout {
+        let constraints = if show_preview {
+            vec![Constraint::Percentage(60), Constraint::Fill(1)]
+        } else {
+            vec![Constraint::Percentage(100)]
+        };
+
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(60), Constraint::Fill(1)])
+            .constraints(constraints)
     }
 
     /// Handles the tick event of the terminal.

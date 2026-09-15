@@ -66,7 +66,8 @@ impl NewTaskDialog {
             &state.field_values.name,
             state.name_cursor,
             is_focused,
-        ));
+        ))
+        .wrap(Wrap { trim: true });
 
         frame.render_widget(block, area);
         frame.render_widget(label, layout[0]);
@@ -204,7 +205,7 @@ impl NewTaskDialog {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),
+                Constraint::Length(4),
                 Constraint::Fill(1),
                 Constraint::Length(3),
                 Constraint::Length(3),
@@ -216,7 +217,7 @@ impl NewTaskDialog {
     fn get_name_layout() -> Layout {
         Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1); 3])
+            .constraints([Constraint::Length(1), Constraint::Length(2), Constraint::Length(1)])
             .horizontal_margin(1)
     }
 

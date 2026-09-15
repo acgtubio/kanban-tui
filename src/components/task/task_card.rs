@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Paragraph, Wrap},
 };
 
 use crate::{
@@ -15,11 +15,23 @@ use crate::{
 pub struct TaskCard {}
 
 impl TaskCard {
+    const PREFIX_WIDTH: u16 = 5;
+
     fn get_content_layout() -> Layout {
-        Layout::horizontal([Constraint::Length(5), Constraint::Fill(1)])
+        Layout::horizontal([Constraint::Length(TaskCard::PREFIX_WIDTH), Constraint::Fill(1)])
     }
 
-    fn get_prefix_style(prio: TaskPriority) -> Style {
+    /// Estimates how many terminal rows `text` will wrap to when rendered in a column
+    /// `column_width` cells wide (i.e. the raw area passed to `render_card`, before the
+    /// name/prefix split). Used by `Kanban::render_column` to size each task's row before
+    /// rendering, since row heights must be decided ahead of the per-row content split.
+    pub(crate) fn estimate_wrapped_lines(text: &str, column_width: u16) -> u16 {
+        let text_width = column_width.saturating_sub(TaskCard::PREFIX_WIDTH).max(1);
+        let char_count = text.chars().count() as u16;
+        char_count.div_ceil(text_width).max(1)
+    }
+
+    pub(crate) fn get_prefix_style(prio: TaskPriority) -> Style {
         let style = Style::default().add_modifier(Modifier::BOLD);
         let style = match prio {
             TaskPriority::Normal => style.fg(Color::Green),
@@ -55,7 +67,7 @@ impl TaskCard {
 
         let prefix = Paragraph::new(vec![Line::from(vec![Span::raw(prio).style(prefix_style)])])
             .alignment(Alignment::Center);
-        let task_title = Paragraph::new(task.name.clone());
+        let task_title = Paragraph::new(task.name.clone()).wrap(Wrap { trim: true });
 
         frame.render_widget(block, area);
         frame.render_widget(prefix, layout[0]);
