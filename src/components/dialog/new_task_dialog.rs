@@ -1,7 +1,8 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Style, Stylize},
+    style::{Modifier, Style, Stylize},
+    text::{Line, Span},
     widgets::{Block, Clear, Paragraph, Wrap},
 };
 
@@ -60,7 +61,12 @@ impl NewTaskDialog {
         let layout = NewTaskDialog::get_name_layout().split(area);
 
         let label = Paragraph::new("[1] Task");
-        let value = Paragraph::new(state.field_values.name.clone());
+        let is_focused = state.current_field == TaskField::Name;
+        let value = Paragraph::new(NewTaskDialog::build_value_line(
+            &state.field_values.name,
+            state.name_cursor,
+            is_focused,
+        ));
 
         frame.render_widget(block, area);
         frame.render_widget(label, layout[0]);
@@ -75,12 +81,38 @@ impl NewTaskDialog {
         let layout = NewTaskDialog::get_description_layout().split(area);
 
         let label = Paragraph::new("[2] Description");
-        let value =
-            Paragraph::new(state.field_values.description.clone()).wrap(Wrap { trim: true });
+        let is_focused = state.current_field == TaskField::Description;
+        let value = Paragraph::new(NewTaskDialog::build_value_line(
+            &state.field_values.description,
+            state.description_cursor,
+            is_focused,
+        ))
+        .wrap(Wrap { trim: true });
 
         frame.render_widget(block, area);
         frame.render_widget(label, layout[0]);
         frame.render_widget(value, layout[1]);
+    }
+
+    fn build_value_line(text: &str, cursor: usize, is_focused: bool) -> Line<'static> {
+        if !is_focused {
+            return Line::from(text.to_string());
+        }
+
+        let chars: Vec<char> = text.chars().collect();
+        let cursor = cursor.min(chars.len());
+        let before: String = chars[..cursor].iter().collect();
+        let (at, after): (String, String) = if cursor < chars.len() {
+            (chars[cursor].to_string(), chars[cursor + 1..].iter().collect())
+        } else {
+            (" ".to_string(), String::new())
+        };
+
+        Line::from(vec![
+            Span::raw(before),
+            Span::raw(at).style(Style::default().add_modifier(Modifier::REVERSED)),
+            Span::raw(after),
+        ])
     }
 
     fn draw_status_field(frame: &mut Frame, area: Rect, state: &AddTaskModalState) {

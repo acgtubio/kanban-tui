@@ -194,6 +194,8 @@ impl AppState {
             current_field: TaskField::Name,
             field_values: TaskFieldValues::default(),
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         });
     }
 
@@ -207,10 +209,14 @@ impl AppState {
         };
 
         self.active_pane = Pane::AddTask;
+        let name_cursor = task.name.chars().count();
+        let description_cursor = task.description.chars().count();
         self.add_task_focus = Some(AddTaskModalState {
             current_field: TaskField::Name,
             field_values: TaskFieldValues::from_task(&task),
             editing_task_id: Some(task.id),
+            name_cursor,
+            description_cursor,
         });
     }
 
@@ -252,6 +258,37 @@ impl AppState {
         }
     }
 
+    pub fn insert_char_at_name_cursor(&mut self, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            let idx = add_task_focus.name_cursor;
+            add_task_focus.field_values.insert_to_name(idx, c);
+            add_task_focus.name_cursor += 1;
+        }
+    }
+
+    pub fn backspace_at_name_cursor(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            if add_task_focus.name_cursor > 0 {
+                add_task_focus.name_cursor -= 1;
+                let idx = add_task_focus.name_cursor;
+                add_task_focus.field_values.remove_char_name(idx);
+            }
+        }
+    }
+
+    pub fn move_name_cursor_left(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.name_cursor = add_task_focus.name_cursor.saturating_sub(1);
+        }
+    }
+
+    pub fn move_name_cursor_right(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            let max = add_task_focus.field_values.name.chars().count();
+            add_task_focus.name_cursor = (add_task_focus.name_cursor + 1).min(max);
+        }
+    }
+
     pub fn add_to_description(&mut self, c: char) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.field_values.add_to_description(c);
@@ -273,6 +310,37 @@ impl AppState {
     pub fn remove_from_description(&mut self, idx: usize) {
         if let Some(add_task_focus) = &mut self.add_task_focus {
             add_task_focus.field_values.remove_char_description(idx);
+        }
+    }
+
+    pub fn insert_char_at_description_cursor(&mut self, c: char) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            let idx = add_task_focus.description_cursor;
+            add_task_focus.field_values.insert_to_description(idx, c);
+            add_task_focus.description_cursor += 1;
+        }
+    }
+
+    pub fn backspace_at_description_cursor(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            if add_task_focus.description_cursor > 0 {
+                add_task_focus.description_cursor -= 1;
+                let idx = add_task_focus.description_cursor;
+                add_task_focus.field_values.remove_char_description(idx);
+            }
+        }
+    }
+
+    pub fn move_description_cursor_left(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            add_task_focus.description_cursor = add_task_focus.description_cursor.saturating_sub(1);
+        }
+    }
+
+    pub fn move_description_cursor_right(&mut self) {
+        if let Some(add_task_focus) = &mut self.add_task_focus {
+            let max = add_task_focus.field_values.description.chars().count();
+            add_task_focus.description_cursor = (add_task_focus.description_cursor + 1).min(max);
         }
     }
 
@@ -873,6 +941,8 @@ mod tests {
             current_field: TaskField::Description,
             field_values: TaskFieldValues::default(),
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         };
 
         assert_eq!(Some(expected_value), app.add_task_focus);
@@ -892,6 +962,8 @@ mod tests {
             current_field: TaskField::Name,
             field_values: default_field_values,
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         };
 
         app.add_to_name('a');
@@ -914,6 +986,8 @@ mod tests {
             current_field: TaskField::Name,
             field_values: default_field_values,
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         };
 
         app.add_to_name('a');
@@ -937,6 +1011,8 @@ mod tests {
             current_field: TaskField::Name,
             field_values: default_field_values,
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         };
 
         app.add_to_name('a');
@@ -961,6 +1037,8 @@ mod tests {
             current_field: TaskField::Name,
             field_values: default_field_values,
             editing_task_id: None,
+            name_cursor: 0,
+            description_cursor: 0,
         };
 
         app.add_to_name('a');

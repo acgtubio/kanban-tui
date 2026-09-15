@@ -23,6 +23,12 @@ pub fn handle_add_task_events(event_handler: &mut EventHandler, key_event: KeyEv
         KeyCode::Tab => event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::Navigate(
             NavigationEvent::Next,
         ))),
+        KeyCode::Left => event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::Input(
+            InputEvent::PrevChar,
+        ))),
+        KeyCode::Right => event_handler.send(AppEvent::AddTaskEvent(AddTaskEvent::Input(
+            InputEvent::NextChar,
+        ))),
         _ => {}
     }
 }

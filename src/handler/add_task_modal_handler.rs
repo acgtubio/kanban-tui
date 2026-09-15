@@ -20,20 +20,40 @@ impl AddTaskModalHandler {
     }
 
     pub fn handle_char_input(state: &mut AppState, ch: char) {
-        if let Some(add_task_modal_state) = &mut state.add_task_focus {
+        if let Some(add_task_modal_state) = &state.add_task_focus {
             match add_task_modal_state.current_field {
-                TaskField::Name => state.add_to_name(ch),
-                TaskField::Description => state.add_to_description(ch),
+                TaskField::Name => state.insert_char_at_name_cursor(ch),
+                TaskField::Description => state.insert_char_at_description_cursor(ch),
                 _ => (),
             }
         }
     }
 
     pub fn handle_char_pop(state: &mut AppState) {
-        if let Some(add_task_modal_state) = &mut state.add_task_focus {
+        if let Some(add_task_modal_state) = &state.add_task_focus {
             match add_task_modal_state.current_field {
-                TaskField::Name => state.pop_name(),
-                TaskField::Description => state.pop_description(),
+                TaskField::Name => state.backspace_at_name_cursor(),
+                TaskField::Description => state.backspace_at_description_cursor(),
+                _ => (),
+            }
+        }
+    }
+
+    fn handle_cursor_left(state: &mut AppState) {
+        if let Some(add_task_modal_state) = &state.add_task_focus {
+            match add_task_modal_state.current_field {
+                TaskField::Name => state.move_name_cursor_left(),
+                TaskField::Description => state.move_description_cursor_left(),
+                _ => (),
+            }
+        }
+    }
+
+    fn handle_cursor_right(state: &mut AppState) {
+        if let Some(add_task_modal_state) = &state.add_task_focus {
+            match add_task_modal_state.current_field {
+                TaskField::Name => state.move_name_cursor_right(),
+                TaskField::Description => state.move_description_cursor_right(),
                 _ => (),
             }
         }
@@ -68,8 +88,8 @@ impl AddTaskModalHandler {
         match event {
             InputEvent::Key(ch) => AddTaskModalHandler::handle_input(state, ch),
             InputEvent::PopChar => AddTaskModalHandler::handle_char_pop(state),
-            InputEvent::PrevChar => todo!(),
-            InputEvent::NextChar => todo!(),
+            InputEvent::PrevChar => AddTaskModalHandler::handle_cursor_left(state),
+            InputEvent::NextChar => AddTaskModalHandler::handle_cursor_right(state),
         }
     }
 

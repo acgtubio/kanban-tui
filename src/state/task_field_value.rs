@@ -23,7 +23,8 @@ impl TaskFieldValues {
     }
 
     pub fn insert_to_name(&mut self, idx: usize, c: char) {
-        self.name.insert(idx, c);
+        let byte_idx = Self::char_idx_to_byte_idx(&self.name, idx);
+        self.name.insert(byte_idx, c);
     }
 
     pub fn pop_name(&mut self) {
@@ -31,7 +32,10 @@ impl TaskFieldValues {
     }
 
     pub fn remove_char_name(&mut self, idx: usize) {
-        self.name.remove(idx);
+        let byte_idx = Self::char_idx_to_byte_idx(&self.name, idx);
+        if byte_idx < self.name.len() {
+            self.name.remove(byte_idx);
+        }
     }
 
     pub fn add_to_description(&mut self, c: char) {
@@ -39,7 +43,8 @@ impl TaskFieldValues {
     }
 
     pub fn insert_to_description(&mut self, idx: usize, c: char) {
-        self.description.insert(idx, c);
+        let byte_idx = Self::char_idx_to_byte_idx(&self.description, idx);
+        self.description.insert(byte_idx, c);
     }
 
     pub fn pop_description(&mut self) {
@@ -47,7 +52,14 @@ impl TaskFieldValues {
     }
 
     pub fn remove_char_description(&mut self, idx: usize) {
-        self.description.remove(idx);
+        let byte_idx = Self::char_idx_to_byte_idx(&self.description, idx);
+        if byte_idx < self.description.len() {
+            self.description.remove(byte_idx);
+        }
+    }
+
+    fn char_idx_to_byte_idx(s: &str, idx: usize) -> usize {
+        s.char_indices().nth(idx).map(|(b, _)| b).unwrap_or(s.len())
     }
 
     pub fn next_status(&mut self) {

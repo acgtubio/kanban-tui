@@ -7,6 +7,8 @@ pub struct AddTaskModalState {
     pub current_field: TaskField,
     pub field_values: TaskFieldValues,
     pub editing_task_id: Option<Uuid>,
+    pub name_cursor: usize,
+    pub description_cursor: usize,
 }
 
 impl AddTaskModalState {
