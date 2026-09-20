@@ -27,6 +27,9 @@ impl Kanban {
 
         kanban
             .states
+            .insert(TaskStatus::Backlog, ListState::default());
+        kanban
+            .states
             .insert(TaskStatus::Pending, ListState::default());
         kanban
             .states
@@ -100,19 +103,15 @@ impl Component for Kanban {
         } else {
             let layout = self.get_children_layout().split(inner_area);
 
-            self.render_column(frame, layout[0], state, TaskStatus::Pending);
-            self.render_column(frame, layout[1], state, TaskStatus::InProgress);
-            self.render_column(frame, layout[2], state, TaskStatus::Completed);
+            for (i, status) in TaskStatus::ALL.iter().enumerate() {
+                self.render_column(frame, layout[i], state, *status);
+            }
         }
     }
 
     fn get_children_layout(&self) -> Layout {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Fill(1),
-                Constraint::Fill(1),
-                Constraint::Fill(1),
-            ])
+            .constraints([Constraint::Fill(1); TaskStatus::ALL.len()])
     }
 }

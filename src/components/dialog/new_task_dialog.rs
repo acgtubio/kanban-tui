@@ -128,14 +128,9 @@ impl NewTaskDialog {
         frame.render_widget(label, layout[0]);
 
         let selected = state.field_values.task_status;
-        NewTaskDialog::draw_status_option(frame, option_layout[0], TaskStatus::Pending, selected);
-        NewTaskDialog::draw_status_option(
-            frame,
-            option_layout[1],
-            TaskStatus::InProgress,
-            selected,
-        );
-        NewTaskDialog::draw_status_option(frame, option_layout[2], TaskStatus::Completed, selected);
+        for (i, status) in TaskStatus::ALL.iter().enumerate() {
+            NewTaskDialog::draw_status_option(frame, option_layout[i], *status, selected);
+        }
     }
 
     fn draw_priority_field(frame: &mut Frame, area: Rect, state: &AddTaskModalState) {
@@ -192,7 +187,7 @@ impl NewTaskDialog {
     fn get_status_option_layout() -> Layout {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Fill(1); 3])
+            .constraints([Constraint::Fill(1); TaskStatus::ALL.len()])
     }
 
     fn get_priority_option_layout() -> Layout {

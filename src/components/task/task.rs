@@ -7,6 +7,7 @@ use crate::{db::TaskModel, state::task_field_value::TaskFieldValues};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum TaskStatus {
+    Backlog,
     Pending,
     InProgress,
     Completed,
@@ -16,6 +17,7 @@ impl FromSql for TaskStatus {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Text(items) => match items {
+                b"BACKLOG" => Ok(TaskStatus::Backlog),
                 b"PENDING" => Ok(TaskStatus::Pending),
                 b"IN_PROGRESS" => Ok(TaskStatus::InProgress),
                 b"COMPLETED" => Ok(TaskStatus::Completed),
@@ -27,14 +29,28 @@ impl FromSql for TaskStatus {
 }
 
 impl TaskStatus {
-    pub const ALL: [TaskStatus; 3] = [
+    pub const ALL: [TaskStatus; 4] = [
+        TaskStatus::Backlog,
         TaskStatus::Pending,
         TaskStatus::InProgress,
         TaskStatus::Completed,
     ];
 
+    /// The next status in board order, wrapping from the last column to the first.
+    pub fn next(self) -> TaskStatus {
+        let idx = Self::ALL.iter().position(|s| *s == self).unwrap_or(0);
+        Self::ALL[(idx + 1) % Self::ALL.len()]
+    }
+
+    /// The previous status in board order, wrapping from the first column to the last.
+    pub fn prev(self) -> TaskStatus {
+        let idx = Self::ALL.iter().position(|s| *s == self).unwrap_or(0);
+        Self::ALL[(idx + Self::ALL.len() - 1) % Self::ALL.len()]
+    }
+
     fn from_string(s: &str) -> Result<TaskStatus, ()> {
         match s {
+            "BACKLOG" => Ok(TaskStatus::Backlog),
             "PENDING" => Ok(TaskStatus::Pending),
             "IN_PROGRESS" => Ok(TaskStatus::InProgress),
             "COMPLETED" => Ok(TaskStatus::Completed),
@@ -69,6 +85,7 @@ impl FromSql for TaskPriority {
 impl TaskStatus {
     pub fn to_readable_string(&self) -> String {
         let title = match self {
+            TaskStatus::Backlog => "Backlog",
             TaskStatus::Pending => "Pending",
             TaskStatus::InProgress => "In Progress",
             TaskStatus::Completed => "Completed",
@@ -79,6 +96,7 @@ impl TaskStatus {
 
     pub fn to_string(&self) -> String {
         let title = match self {
+            TaskStatus::Backlog => "BACKLOG",
             TaskStatus::Pending => "PENDING",
             TaskStatus::InProgress => "IN_PROGRESS",
             TaskStatus::Completed => "COMPLETED",
@@ -238,5 +256,32 @@ impl Task {
 
     pub fn is_done(&self) -> bool {
         self.status == TaskStatus::Completed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_should_round_trip_through_strings() {
+        for status in TaskStatus::ALL {
+            assert_eq!(Ok(status), TaskStatus::from_string(&status.to_string()));
+        }
+    }
+
+    #[test]
+    fn backlog_should_be_first_column() {
+        assert_eq!(TaskStatus::Backlog, TaskStatus::ALL[0]);
+        assert_eq!("BACKLOG", TaskStatus::Backlog.to_string());
+        assert_eq!("Backlog", TaskStatus::Backlog.to_readable_string());
+    }
+
+    #[test]
+    fn status_next_and_prev_should_wrap_in_board_order() {
+        assert_eq!(TaskStatus::Pending, TaskStatus::Backlog.next());
+        assert_eq!(TaskStatus::Backlog, TaskStatus::Completed.next());
+        assert_eq!(TaskStatus::Completed, TaskStatus::Backlog.prev());
+        assert_eq!(TaskStatus::Backlog, TaskStatus::Pending.prev());
     }
 }

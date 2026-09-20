@@ -25,9 +25,9 @@ use ratatui::{
 };
 
 /// Below this terminal width, the preview pane is dropped so the Kanban columns
-/// get the full screen width instead of being squeezed to 60% of an already-narrow
+/// get the full screen width instead of being squeezed to 70% of an already-narrow
 /// terminal (e.g. a 13" laptop terminal window).
-const NARROW_SCREEN_WIDTH: u16 = 100;
+const NARROW_SCREEN_WIDTH: u16 = 120;
 
 pub struct App {
     pub running: bool,
@@ -86,7 +86,7 @@ impl App {
                 // Move task modal
                 if self.state.is_moving_task() {
                     let area = frame.area();
-                    let modal_area = App::get_modal_area(area, 80, 10);
+                    let modal_area = App::get_modal_area(area, 80, 11);
 
                     MoveDialog::render_move_dialog(frame, modal_area, &mut self.state);
                 }
@@ -94,7 +94,7 @@ impl App {
                 // Add task modal
                 if self.state.is_focused_add_task() {
                     let area = frame.area();
-                    let modal_area = App::get_modal_area(area, 60, 20);
+                    let modal_area = App::get_modal_area(area, 72, 20);
 
                     NewTaskDialog::render_new_task_dialog(frame, modal_area, &mut self.state);
                 }
@@ -190,7 +190,7 @@ impl App {
 
     fn get_layout(&self, show_preview: bool) -> Layout {
         let constraints = if show_preview {
-            vec![Constraint::Percentage(60), Constraint::Fill(1)]
+            vec![Constraint::Percentage(70), Constraint::Fill(1)]
         } else {
             vec![Constraint::Percentage(100)]
         };

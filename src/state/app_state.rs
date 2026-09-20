@@ -54,6 +54,7 @@ impl AppState {
             db: db,
         };
 
+        app_state.tasks.insert(TaskStatus::Backlog, vec![]);
         app_state.tasks.insert(TaskStatus::Pending, vec![]);
         app_state.tasks.insert(TaskStatus::InProgress, vec![]);
         app_state.tasks.insert(TaskStatus::Completed, vec![]);
@@ -195,32 +196,20 @@ impl AppState {
 
     pub fn cycle_task_status_focus(&mut self) {
         if let Some(modal_focus) = self.modal_focus {
-            self.modal_focus = match modal_focus {
-                TaskStatus::Pending => Some(TaskStatus::InProgress),
-                TaskStatus::InProgress => Some(TaskStatus::Completed),
-                TaskStatus::Completed => Some(TaskStatus::Pending),
-            };
+            self.modal_focus = Some(modal_focus.next());
         }
     }
 
     pub fn prev_task_status_focus(&mut self) {
         if let Some(modal_focus) = self.modal_focus {
-            self.modal_focus = match modal_focus {
-                TaskStatus::Pending => Some(TaskStatus::Completed),
-                TaskStatus::InProgress => Some(TaskStatus::Pending),
-                TaskStatus::Completed => Some(TaskStatus::InProgress),
-            };
+            self.modal_focus = Some(modal_focus.prev());
         }
     }
 
     pub fn cycle_pane(&mut self) {
         self.active_pane = match self.active_pane {
             Pane::Preview => Pane::Kanban(TaskStatus::Pending),
-            Pane::Kanban(task_status) => match task_status {
-                TaskStatus::Pending => Pane::Kanban(TaskStatus::InProgress),
-                TaskStatus::InProgress => Pane::Kanban(TaskStatus::Completed),
-                TaskStatus::Completed => Pane::Kanban(TaskStatus::Pending),
-            },
+            Pane::Kanban(task_status) => Pane::Kanban(task_status.next()),
             _ => self.active_pane.clone(),
         }
     }
@@ -1147,6 +1136,51 @@ mod tests {
 
         app.open_selected_project();
         assert_eq!(Some(1), app.get_task_size_by_status(&TaskStatus::Pending));
+    }
+
+    #[test]
+    fn cycle_pane_should_visit_backlog_and_wrap() {
+        let mut app = project_state();
+        app.open_selected_project();
+
+        let mut visited = vec![app.get_status_by_pane().unwrap()];
+        for _ in 0..4 {
+            app.cycle_pane();
+            visited.push(app.get_status_by_pane().unwrap());
+        }
+
+        assert_eq!(
+            vec![
+                TaskStatus::Pending,
+                TaskStatus::InProgress,
+                TaskStatus::Completed,
+                TaskStatus::Backlog,
+                TaskStatus::Pending,
+            ],
+            visited
+        );
+    }
+
+    #[test]
+    fn should_persist_backlog_task_and_reload_into_backlog_column() {
+        let mut app = project_state();
+        app.open_selected_project();
+        app.focus_add_task_modal();
+        app.insert_to_name(0, 'a');
+        // Default status is Pending, so one step back lands on Backlog.
+        app.add_task_focus.as_mut().unwrap().field_values.prev_status();
+        assert_eq!(
+            TaskStatus::Backlog,
+            app.add_task_focus.as_ref().unwrap().field_values.task_status
+        );
+        app.save_task_form();
+        assert_eq!(Some(1), app.get_task_size_by_status(&TaskStatus::Backlog));
+
+        app.close_project();
+        app.open_selected_project();
+
+        assert_eq!(Some(1), app.get_task_size_by_status(&TaskStatus::Backlog));
+        assert_eq!(Some(0), app.get_task_size_by_status(&TaskStatus::Pending));
     }
 
     #[test]

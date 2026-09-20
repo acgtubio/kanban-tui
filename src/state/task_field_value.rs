@@ -63,19 +63,11 @@ impl TaskFieldValues {
     }
 
     pub fn next_status(&mut self) {
-        self.task_status = match self.task_status {
-            TaskStatus::Pending => TaskStatus::InProgress,
-            TaskStatus::InProgress => TaskStatus::Completed,
-            TaskStatus::Completed => TaskStatus::Pending,
-        }
+        self.task_status = self.task_status.next();
     }
 
     pub fn prev_status(&mut self) {
-        self.task_status = match self.task_status {
-            TaskStatus::Pending => TaskStatus::Completed,
-            TaskStatus::InProgress => TaskStatus::Pending,
-            TaskStatus::Completed => TaskStatus::InProgress,
-        };
+        self.task_status = self.task_status.prev();
     }
 
     pub fn next_priority(&mut self) {
