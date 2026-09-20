@@ -37,8 +37,14 @@ pub enum AppEvent {
     MoveTaskEvent(MoveTaskEvent),
     DeleteConfirmEvent(DeleteConfirmEvent),
     KanbanScreenEvent(KanbanScreenEvent),
+    ProjectListEvent(ProjectListEvent),
     MainScreen(MainScreenEvent),
     Quit,
+}
+
+#[derive(Clone, Debug)]
+pub enum ProjectListEvent {
+    Navigate(NavigationEvent),
 }
 
 #[derive(Clone, Debug)]

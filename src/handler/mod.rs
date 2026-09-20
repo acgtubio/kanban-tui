@@ -3,5 +3,6 @@ pub mod column_pane_handler;
 pub mod delete_confirm_handler;
 pub mod main_screen_handler;
 pub mod move_task_handler;
+pub mod project_list_handler;
 
 pub use add_task_modal_handler::*;

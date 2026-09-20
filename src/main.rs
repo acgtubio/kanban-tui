@@ -17,7 +17,7 @@ fn main() -> color_eyre::Result<()> {
     let _ = db.init_db();
 
     let mut app = App::new(db);
-    app.init_tasks();
+    app.init_projects();
 
     let result = app.run(terminal);
 

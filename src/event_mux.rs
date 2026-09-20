@@ -3,7 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crate::{
     event::{
         AddTaskEvent, AppEvent, DeleteConfirmEvent, EventHandler, InputEvent, KanbanScreenEvent,
-        MainScreenEvent, MoveTaskEvent, NavigationEvent,
+        MainScreenEvent, MoveTaskEvent, NavigationEvent, ProjectListEvent,
     },
     state::app_state::Pane,
 };
@@ -73,9 +73,28 @@ pub fn handle_delete_confirm_event(event_handler: &mut EventHandler, key_event: 
     }
 }
 
+pub fn handle_project_list_event(event_handler: &mut EventHandler, key_event: KeyEvent) {
+    match key_event.code {
+        KeyCode::Char('q') => event_handler.send(AppEvent::Quit),
+        KeyCode::Enter => event_handler.send(AppEvent::ProjectListEvent(
+            ProjectListEvent::Navigate(NavigationEvent::FocusIn),
+        )),
+        KeyCode::Tab | KeyCode::Char('j') => event_handler.send(AppEvent::ProjectListEvent(
+            ProjectListEvent::Navigate(NavigationEvent::Next),
+        )),
+        KeyCode::Char('k') => event_handler.send(AppEvent::ProjectListEvent(
+            ProjectListEvent::Navigate(NavigationEvent::Prev),
+        )),
+        _ => {}
+    }
+}
+
 pub fn handle_kanban_event(event_handler: &mut EventHandler, key_event: KeyEvent) {
     match key_event.code {
         KeyCode::Char('q') => event_handler.send(AppEvent::Quit),
+        KeyCode::Esc => event_handler.send(AppEvent::MainScreen(MainScreenEvent::Navigate(
+            NavigationEvent::FocusOut,
+        ))),
         KeyCode::Enter => event_handler.send(AppEvent::KanbanScreenEvent(
             KanbanScreenEvent::Navigate(NavigationEvent::FocusIn),
         )),
@@ -118,6 +137,7 @@ pub fn handle_column_event(event_handler: &mut EventHandler, key_event: KeyEvent
 
 pub fn handle_events(event_handler: &mut EventHandler, key_event: KeyEvent, current_pane: Pane) {
     match current_pane {
+        Pane::ProjectList => handle_project_list_event(event_handler, key_event),
         Pane::Preview => todo!(),
         Pane::MoveTaskModal => handle_move_task_event(event_handler, key_event),
         Pane::DeleteConfirmModal => handle_delete_confirm_event(event_handler, key_event),

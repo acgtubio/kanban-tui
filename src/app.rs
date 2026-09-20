@@ -1,17 +1,21 @@
 use crate::{
-    components::{Component, DeleteConfirmDialog, Kanban, MoveDialog, NewTaskDialog, Preview},
+    components::{
+        Component, DeleteConfirmDialog, Kanban, MoveDialog, NewTaskDialog, Preview, ProjectList,
+    },
     db::SqliteDb,
     event::{
         AddTaskEvent, AppEvent, DeleteConfirmEvent, Event, EventHandler, KanbanScreenEvent,
         MainScreenEvent, MoveTaskEvent,
+        ProjectListEvent,
     },
     event_mux::handle_events,
     handler::{
         AddTaskModalHandler, column_pane_handler::ColumnHandler,
         delete_confirm_handler::DeleteConfirmHandler, main_screen_handler::MainScreenHandler,
         move_task_handler::MoveTaskHandler,
+        project_list_handler::ProjectListHandler,
     },
-    state::app_state::AppState,
+    state::app_state::{AppState, Pane},
     theme::create_base_block,
 };
 use ratatui::{
@@ -31,6 +35,7 @@ pub struct App {
     pub state: AppState,
     pub kanban: Kanban,
     pub preview: Preview,
+    pub project_list: ProjectList,
 }
 
 impl App {
@@ -40,12 +45,13 @@ impl App {
             events: EventHandler::new(),
             kanban: Kanban::new(),
             preview: Preview::new(),
+            project_list: ProjectList::new(),
             state: AppState::new(db),
         }
     }
 
-    pub fn init_tasks(&mut self) {
-        self.state.init_tasks();
+    pub fn init_projects(&mut self) {
+        self.state.init_projects();
     }
 
     /// Run the application's main loop.
@@ -63,6 +69,11 @@ impl App {
 
                 let modal_block = create_base_block().padding(Padding::uniform(5));
                 frame.render_widget(modal_block, frame.area());
+
+                if self.state.active_pane == Pane::ProjectList {
+                    self.project_list.draw(frame, chunks[0], &mut self.state);
+                    return;
+                }
 
                 // Kanban
                 self.kanban.draw(frame, chunks[0], &mut self.state);
@@ -143,6 +154,7 @@ impl App {
                     self.handle_move_task_event(move_task_event)
                 }
                 AppEvent::DeleteConfirmEvent(event) => self.handle_delete_confirm_event(event),
+                AppEvent::ProjectListEvent(event) => self.handle_project_list_event(event),
                 AppEvent::Quit => self.quit(),
                 AppEvent::MainScreen(main_screen_event) => {
                     self.handle_main_screen_event(main_screen_event)
@@ -150,6 +162,10 @@ impl App {
             },
         }
         Ok(())
+    }
+
+    fn handle_project_list_event(&mut self, event: ProjectListEvent) {
+        ProjectListHandler::handle_events(&mut self.state, event);
     }
 
     fn handle_main_screen_event(&mut self, event: MainScreenEvent) {

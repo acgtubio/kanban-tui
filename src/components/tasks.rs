@@ -80,6 +80,9 @@ impl Kanban {
 impl Component for Kanban {
     fn draw(&mut self, frame: &mut Frame, area: Rect, state: &mut AppState) {
         let mut block = Block::new().title_alignment(Alignment::Left);
+        if let Some(project) = &state.current_project {
+            block = block.title(format!(" {} ", project.name));
+        }
         if state.active_pane != Pane::Preview {
             block = block.borders(Borders::ALL).border_type(BorderType::Rounded);
         }

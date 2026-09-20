@@ -17,6 +17,7 @@ impl MainScreenHandler {
     pub fn handle_navigation(state: &mut AppState, navigation_event: NavigationEvent) {
         match navigation_event {
             NavigationEvent::Next => state.cycle_pane(),
+            NavigationEvent::FocusOut => state.close_project(),
             _ => (),
         }
     }

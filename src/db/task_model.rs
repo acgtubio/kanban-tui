@@ -22,6 +22,12 @@ impl From<Task> for TaskModel {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProjectModel {
+    pub id: String,
+    pub name: String,
+}
+
 pub struct TaskUpdateModel {
     pub name: String,
     pub description: String,
